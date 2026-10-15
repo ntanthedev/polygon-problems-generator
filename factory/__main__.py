@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from .spec import ProblemSpecError, from_polygon_folder, inspect_spec, parse_json
+from .ingest import ingest_file
 
 
 def main(argv=None) -> int:
@@ -29,8 +30,33 @@ def main(argv=None) -> int:
                          choices=["cpp17", "java21", "python3", "other"])
     convert.add_argument("--output", type=Path, help="Create JSON file; never overwrite an existing one")
 
+    ing = commands.add_parser("ingest", help="Import TXT, Markdown, PDF or image into a new V1 draft")
+    ing.add_argument("source", type=Path, help="Path to original file, never modified")
+    ing.add_argument("--slug", required=True, help="lowercase snake_case problem name")
+    ing.add_argument("--dest", type=Path, help="New problem folder (default: problems/<slug>)")
+    ing.add_argument("--language", default="und", help="BCP47 language or und for unknown")
+    ing.add_argument("--idea", help="Optional user-provided algorithm idea")
+    ing.add_argument("--solution-file", type=Path, help="Optional user source code (copied, never run)")
+    ing.add_argument("--solution-language", choices=["cpp17", "java21", "python3", "other"],
+                     default="cpp17")
+    ing.add_argument("--vision-model", help="OPT-IN: send image/PDF pages to Gemini model ID (requires GEMINI_API_KEY)")
+
     args = p.parse_args(argv)
     try:
+        if args.group == "ingest":
+            provider = None
+            if args.vision_model:
+                from .gemini_vision import GeminiVision
+                provider = GeminiVision(args.vision_model)
+            report = ingest_file(
+                args.source, slug=args.slug, dest=args.dest or Path("problems") / args.slug,
+                provider=provider, language=args.language, idea=args.idea,
+                solution_file=args.solution_file,
+                solution_language=args.solution_language,
+            )
+            print(json.dumps(report, indent=2, ensure_ascii=False))
+            print("Draft created; review ambiguities and validate with --ready before proceeding.")
+            return 0
         if args.action == "validate":
             payload = parse_json(args.file.read_text(encoding="utf-8"))
             report = inspect_spec(payload, ready=args.ready)
