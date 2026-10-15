@@ -87,6 +87,10 @@ def _access_cmd(argv: list[str]) -> int:
 
 
 def main():
+    if len(sys.argv) >= 2 and sys.argv[1] == "preflight":
+        from .preflight import main as preflight_main
+
+        raise SystemExit(preflight_main(sys.argv[2:]))
     if len(sys.argv) >= 2 and sys.argv[1] == "originality":
         from .originality import main as originality_main
 

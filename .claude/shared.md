@@ -1,5 +1,9 @@
 # Shared agent context
 
+## Fork-specific Factory workflow
+
+For task execution, read `FACTORY_START_HERE.md`, `docs/factory/TASKS.md`, `docs/factory/HANDOFF.md`, and `docs/factory/AGENT_RULES.md` first. Work in small verifiable tasks, preserve the upstream agent contracts, and do not publish to Polygon without explicit approval. The offline structural preflight command is `python3 -m polyup preflight <problem>`; a PASS is not correctness proof.
+
 This is the **only** copy of roster, layout, pipeline, and critical rules.
 
 Specialist agents (`.claude/agents/<role>.md`) add **only** their role contract. Do not paste this file into those stubs — tell the model to **Read** it.
