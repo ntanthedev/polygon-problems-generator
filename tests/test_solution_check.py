@@ -212,6 +212,21 @@ class SolutionCheckTests(unittest.TestCase):
         with self.assertRaisesRegex(ProblemSpecError, "No candidate"):
             resolve_candidate(self.root, self.spec)
 
+    def test_cli_draft_rejected_before_docker_setup(self):
+        folder = self.root / "draft"
+        folder.mkdir()
+        self.spec["source"]["reviewStatus"] = "pending"
+        (folder / "spec.json").write_text(json.dumps(self.spec))
+        with mock.patch("factory.docker_runner.DockerRunner") as docker:
+            stderr = io.StringIO()
+            with redirect_stderr(stderr), redirect_stdout(io.StringIO()):
+                rc = main(["solutions", "verify", str(folder),
+                           "--candidate", str(self.candidate),
+                           "--oracle", str(self.oracle)])
+        self.assertEqual(rc, 1)
+        self.assertIn("SOURCE_UNREVIEWED", stderr.getvalue())
+        docker.assert_not_called()
+
     def test_cli_fails_closed_without_docker(self):
         folder = self.root / "problem"
         folder.mkdir()

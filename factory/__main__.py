@@ -58,6 +58,17 @@ def main(argv=None) -> int:
             from .solution_check import resolve_candidate, verify_candidate
             from .docker_runner import DockerRunner
             spec = parse_json((args.problem_dir / "spec.json").read_text(encoding="utf-8"))
+            readiness = inspect_spec(spec, ready=True)
+            if readiness["status"] != "PASS":
+                issues = "; ".join(
+                    f"{issue['code']}: {issue['message']}"
+                    for issue in readiness["errors"]
+                )
+                raise ProblemSpecError("Spec is not reviewed/ready: " + issues)
+            if spec["statement"]["outputPolicy"] != "exact":
+                raise ProblemSpecError(
+                    "SOL-001 supports exact-output C++17 only, not semantic/floating checker tasks"
+                )
             candidate = resolve_candidate(args.problem_dir, spec, args.candidate)
             with DockerRunner(image=args.image) as isolated:
                 report = verify_candidate(
