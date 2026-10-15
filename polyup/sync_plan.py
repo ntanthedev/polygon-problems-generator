@@ -7,6 +7,7 @@ problems require explicit overwrite approval at apply time.
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
 
 from .api import PolygonAPIError
@@ -51,6 +52,29 @@ def _named_entries(entries, context: str, key: str = "name") -> dict:
     return mapping
 
 
+def local_fingerprint(root: Path) -> str:
+    """Fingerprint local problem inputs (ignore volatile build reports/Polygon ID)."""
+    root = Path(root)
+    entries = []
+    excluded = {".build", ".tests", "reports", "__pycache__", ".git"}
+    for path in root.rglob("*"):
+        if any(part in excluded for part in path.relative_to(root).parts):
+            continue
+        if path.name == ".polygon.json" or not path.is_file():
+            continue
+        if path.is_symlink():
+            raise UnsafeSyncError("Symlinks inside problem directory are unsupported")
+        relative = path.relative_to(root).as_posix()
+        entries.append((relative, hashlib.sha256(path.read_bytes()).hexdigest()))
+    packed = json.dumps(sorted(entries), separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(packed.encode("utf-8")).hexdigest()
+
+
+def assert_local_unchanged(root: Path, plan: dict) -> None:
+    if local_fingerprint(root) != plan.get("localFingerprint"):
+        raise UnsafeSyncError("Local source files changed since sync planning; re-plan")
+
+
 def build_sync_plan(problem_dir: Path, api=None, *, include_remote: bool = True) -> dict:
     """Returns a JSON-serializable plan without changing files or remote state."""
     root = Path(problem_dir)
@@ -89,6 +113,7 @@ def build_sync_plan(problem_dir: Path, api=None, *, include_remote: bool = True)
 
     plan = {
         "problem": root.name,
+        "localFingerprint": local_fingerprint(root),
         "mode": "update" if is_existing else "create",
         "problemId": remote_id,
         "remoteRevision": None,
