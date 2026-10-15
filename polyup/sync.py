@@ -83,7 +83,12 @@ def sync_problem(
     _print_cautions(api, pid)
 
     url = f"https://polygon.codeforces.com/edit-problem?problemId={problem_id}"
-    print(f"\nDone! {url}")
+    if config.build_package and config.verify_package:
+        print(f"\nSync completed; Polygon package verification requested and monitored: {url}")
+    elif config.build_package:
+        print(f"\nSync completed; package READY but invocations NOT verified: {url}")
+    else:
+        print(f"\nSync completed WITHOUT package build/verification: {url}")
 
     print("\n⚠ Enable 'Auto update' manually (no API support):")
     print(f"  {url}/files")
