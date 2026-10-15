@@ -190,6 +190,36 @@
               "explanation"
             ]
           }
+        },
+        "testCaseMode": {
+          "enum": [
+            "single",
+            "multiple",
+            "unknown"
+          ]
+        },
+        "outputPolicy": {
+          "enum": [
+            "exact",
+            "checker",
+            "floating-point",
+            "interactive",
+            "unknown"
+          ]
+        },
+        "timeLimitMs": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "memoryLimitMb": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
         }
       },
       "required": [
@@ -201,7 +231,11 @@
         "notes",
         "interactive",
         "constraints",
-        "samples"
+        "samples",
+        "testCaseMode",
+        "outputPolicy",
+        "timeLimitMs",
+        "memoryLimitMb"
       ]
     },
     "guidance": {

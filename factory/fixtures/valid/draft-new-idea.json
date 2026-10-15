@@ -20,7 +20,11 @@
     "notes": null,
     "interactive": false,
     "constraints": [],
-    "samples": []
+    "samples": [],
+    "testCaseMode": "unknown",
+    "outputPolicy": "unknown",
+    "timeLimitMs": null,
+    "memoryLimitMb": null
   },
   "guidance": {
     "idea": {

@@ -32,7 +32,11 @@
         "output": "5\n",
         "explanation": null
       }
-    ]
+    ],
+    "testCaseMode": "single",
+    "outputPolicy": "exact",
+    "timeLimitMs": 1000,
+    "memoryLimitMb": 256
   },
   "guidance": {},
   "ambiguities": []

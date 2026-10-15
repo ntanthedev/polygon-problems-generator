@@ -101,6 +101,11 @@ def inspect_spec(data: dict, *, ready: bool = False) -> dict:
         if not data["statement"]["samples"]:
             errors.append({"code": "SAMPLES_MISSING", "path": "$.statement.samples",
                            "message": "At least one sample input/output pair is required"})
+        for field in ("testCaseMode", "outputPolicy"):
+            if data["statement"][field] == "unknown":
+                errors.append({"code": "UNRESOLVED_SEMANTICS",
+                               "path": "$.statement." + field,
+                               "message": field + " must be explicitly reviewed"})
         if data["statement"]["interactive"]:
             errors.append({"code": "INTERACTIVE_UNSUPPORTED", "path": "$.statement.interactive",
                            "message": "Interactive problems require a future specialized workflow"})
@@ -247,6 +252,8 @@ def from_polygon_folder(root: Path, *, idea: str | None = None,
                       "output": parts["output"].strip() or None,
                       "notes": parts["notes"].strip() or None,
                       "interactive": bool(parts["interaction"].strip()),
+                      "testCaseMode": "unknown", "outputPolicy": "unknown",
+                      "timeLimitMs": None, "memoryLimitMb": None,
                       "constraints": [], "samples": samples},
         "guidance": guidance,
         "ambiguities": ambiguities,

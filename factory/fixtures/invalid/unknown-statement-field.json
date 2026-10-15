@@ -33,7 +33,11 @@
         "explanation": null
       }
     ],
-    "surprise": true
+    "surprise": true,
+    "testCaseMode": "single",
+    "outputPolicy": "exact",
+    "timeLimitMs": 1000,
+    "memoryLimitMb": 256
   },
   "guidance": {},
   "ambiguities": []
