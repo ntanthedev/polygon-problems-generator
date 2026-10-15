@@ -10,6 +10,7 @@ from .access import collect_access
 from .api import PolygonAPI, PolygonAPIError
 from .config import SyncConfig
 from .sync import grant_access, list_accesses, sync_problem
+from .sync_plan import UnsafeSyncError, build_sync_plan
 
 
 def _load_env(env_file: Path):
@@ -111,7 +112,10 @@ def main():
         epilog="Subcommands: python -m polyup originality <problem> | python -m polyup access <problem> [--list] [--access USER:LEVEL ...]",
     )
     parser.add_argument("problem", help="Problem folder name (under problems/)")
-    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--dry-run", action="store_true", help="Alias for read-only plan (default)")
+    parser.add_argument("--apply", action="store_true", help="Explicitly allow remote writes")
+    parser.add_argument("--allow-overwrite", action="store_true", help="Acknowledge modifying an existing Polygon problem")
+    parser.add_argument("--expected-revision", help="Optional pinned revision; refuse changes if remote differs")
     parser.add_argument("--time-limit", type=int, default=1000, help="Time limit in ms (default: 1000)")
     parser.add_argument("--memory-limit", type=int, default=256, help="Memory limit in MB (default: 256)")
     parser.add_argument("--lang", default="english", help="Statement language (default: english)")
@@ -149,9 +153,25 @@ def main():
         access=access,
         grant_access=not args.no_access,
     )
-    api = _api(repo_root, config.api_delay)
+    # No Polygon client/credentials needed when merely planning a new problem.
+    meta_file = problem_dir / ".polygon.json"
+    metadata = json.loads(meta_file.read_text()) if meta_file.exists() else {}
+    existing = bool(metadata.get("problemId"))
     try:
-        sync_problem(problem_dir, api, config, dry_run=args.dry_run)
+        api = _api(repo_root, config.api_delay) if existing or args.apply else None
+        plan = build_sync_plan(problem_dir, api)
+        if args.expected_revision is not None and plan["remoteRevision"] != args.expected_revision:
+            raise UnsafeSyncError("Remote revision differs from --expected-revision; refusing to sync")
+        print(json.dumps(plan, indent=2, ensure_ascii=False))
+        if not args.apply:
+            print("Read-only plan completed; no Polygon writes. Use --apply to enable writes.")
+            return
+        if existing and not args.allow_overwrite:
+            raise UnsafeSyncError(
+                "Existing Polygon problem: --apply requires --allow-overwrite "
+                "and approval of the plan above"
+            )
+        sync_problem(problem_dir, api, config, plan=plan, allow_overwrite=args.allow_overwrite)
     except PolygonAPIError as exc:
         _exit_on_api_error(exc)
 
