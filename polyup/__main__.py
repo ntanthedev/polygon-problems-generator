@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from .access import collect_access
-from .api import PolygonAPI
+from .api import PolygonAPI, PolygonAPIError
 from .config import SyncConfig
 from .sync import grant_access, list_accesses, sync_problem
 
@@ -20,6 +20,11 @@ def _load_env(env_file: Path):
         if line and not line.startswith("#") and "=" in line:
             k, v = line.split("=", 1)
             os.environ.setdefault(k.strip(), v.strip())
+
+
+def _exit_on_api_error(exc: PolygonAPIError):
+    print(f"  {exc}", file=sys.stderr)
+    sys.exit(1)
 
 
 def _api(repo_root: Path, delay: float) -> PolygonAPI:
@@ -75,18 +80,25 @@ def _access_cmd(argv: list[str]) -> int:
     pid = _problem_id(problem_dir)
     api = _api(repo_root, args.api_delay)
 
-    if args.list or not args.access:
-        print(f"Access for problem id={pid}")
-        list_accesses(api, pid)
-        if not args.access:
-            return 0
+    try:
+        if args.list or not args.access:
+            print(f"Access for problem id={pid}")
+            list_accesses(api, pid)
+            if not args.access:
+                return 0
 
-    access = collect_access(repo_root, problem_dir, args.access)
-    grant_access(api, pid, access)
+        access = collect_access(repo_root, problem_dir, args.access)
+        grant_access(api, pid, access)
+    except PolygonAPIError as exc:
+        _exit_on_api_error(exc)
     return 0
 
 
 def main():
+    if len(sys.argv) >= 2 and sys.argv[1] == "preflight":
+        from .preflight import main as preflight_main
+
+        raise SystemExit(preflight_main(sys.argv[2:]))
     if len(sys.argv) >= 2 and sys.argv[1] == "originality":
         from .originality import main as originality_main
 
@@ -138,7 +150,10 @@ def main():
         grant_access=not args.no_access,
     )
     api = _api(repo_root, config.api_delay)
-    sync_problem(problem_dir, api, config, dry_run=args.dry_run)
+    try:
+        sync_problem(problem_dir, api, config, dry_run=args.dry_run)
+    except PolygonAPIError as exc:
+        _exit_on_api_error(exc)
 
 
 if __name__ == "__main__":
