@@ -1,4 +1,4 @@
-# Session handoff — 2026-10-16 (ING-002 source ingestion)
+# Session handoff — 2026-10-16 (SOL-001 candidate/oracle verification)
 
 ## Repository / branch
 
@@ -9,6 +9,7 @@
 - API-003 branch: `factory/api-003-safe-sync-20261015` stacked on API-002 branch; Stacked PR: [#3 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/3), targeting API-002 branch.
 - ING-001 branch: `factory/ing-001-problem-spec-v1-20261015`, stacked on API-003. [stacked PR #4 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/4), targeting the API-003 branch.
 - ING-002 branch: `factory/ing-002-multimodal-ingestion-20261016`; [stacked PR #5 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/5) targeting ING-001 branch.
+- SOL-001 branch: `factory/sol-001-reference-check-20261016` stacked on ING-002 [PR #5](https://github.com/ntanthedev/polygon-problems-generator/pull/5); new PR #6 to be created.
 - Base main commit at fork discovery: `0725d8874e41b2d39ba9d6d3b82b24c60887109b`.
 
 ## User's goal
@@ -58,7 +59,7 @@ Drop an existing programming problem (PDF/images/text) into a workspace; prefera
 
 1. Review PR #1 (base) → PR #2 (API-002) → PR #3 (API-003), CI and staged code. Rebase/retarget stacked PRs only after the base merges.
 2. API-INT-001 still requires a separately approved live integration trial on a user-specified private Polygon problem; do not call Polygon yet.
-3. Next coding task: **SOL-001**. Consume V1 spec and optional user idea/source code; create independent oracle/correctness evidence (no auto-publish).
+3. Next coding task: **QA-001**. Add seeded/exhaustive/differential test-generation budgets and minimized reproducible counterexamples atop SOL-001. Real Docker smoke SOL-LIVE-001 remains outstanding.
 4. API-003 limitations: metadata-only remote comparisons, best-effort (non-atomic) revision guard and no rollback. These require integration review before unattended writes.
 
 ## Reporting contract
@@ -82,3 +83,12 @@ Never assume a previous plan was implemented. New session should confirm branch 
 - CI [run 38777661492](https://github.com/ntanthedev/polygon-problems-generator/actions/runs/38777661492): **106 tests PASS** on Python 3.11 and 3.12. Latest code CI confirmed on Python 3.11 and 3.12. Vision tests use MOCK, not an actual Gemini API key or live model.
 - No claim that generic PDFs with complex columns/tables are transcribed perfectly; final review must inspect `evidence.json` and source. Algorithm solving, generator creation and end-to-end Polygon publishing are future tasks.
 - **Next SOL-001**: issue scoped tasks for a strong reasoning model (derive oracle), or weaker model with user-provided idea/code. **ING-LIVE-001** requires separate opt-in to send a disposable non-sensitive source through Gemini and verify SDK/model behavior.
+
+## SOL-001 delivery (2026-10-16)
+
+- Branch `factory/sol-001-reference-check-20261016` on top of PR #5. Added `factory/solution_check.py` (reviewed V1 spec, optional user code, C++17 candidate/oracle agreements, sample and extra cases, verdicts WA/TLE/RE/MLE/OLE/oracle failures, source/input hashes), `factory/docker_runner.py` (Docker-only compilation/execution with read-only/networkless nonroot containers, CPU/memory/pid/time/file caps, symlink/FIFO-resistant guest output), CLI `factory solutions verify`, tests, synthetic fixture, and `.agents/skills/factory-solve/SKILL.md`.
+- Guidance for three modes: statement-only → derive candidate/oracle; statement+idea → challenge untrusted idea; statement+solution → treat user source as candidate and derive oracle separately. **No automatic LLM reasoning runtime has been added**: only agent skill and deterministic tools.
+- Result `PASS_ON_TESTS` means agreement on a limited input corpus, not proof. Runner accepts reviewed `outputPolicy=exact` noninteractive tasks only, and marks `oracleIsProvenCorrect=false`.
+- Mock/offline CI [run 38779624746](https://github.com/ntanthedev/polygon-problems-generator/actions/runs/38779624746) passed 132 tests for Python 3.11/3.12. Later commits added readiness gate and output symlink/FIFO hardening; **confirm latest SHA CI** before merge.
+- No real Docker container compilation/execution performed. `SOL-LIVE-001` awaits a disposable local VM + preapproved locally available gcc Docker image; no secrets/Polygon involved. Test fixture and instructions in [SOLUTIONS.md](SOLUTIONS.md).
+- QA-001 next: generate small-domain systematic/random case corpora with explicit oracle resource budgets, seeded reproducibility, counterexample minimizing, saved regressions. Keep checker-specific tasks deferred.

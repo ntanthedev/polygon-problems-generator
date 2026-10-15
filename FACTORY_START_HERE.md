@@ -6,7 +6,7 @@ This is a fork of [7oSkaaa/polygon-problems-generator](https://github.com/7oSkaa
 
 - **Implemented in this stacked branch:** governance docs, structural preflight, API timeout/error handling, mock-verified package polling, read-only sync planning, versioned V1 spec, and offline-first TXT/Markdown/PDF/image ingestion with opt-in Gemini vision adapter.
 - **Inherited upstream, not yet revalidated on a real account:** the Claude-oriented agent roles, local `verify.sh`, and `polyup` Polygon upload flow.
-- **Not implemented yet:** independent solution/oracle generation (SOL-001), strong-test engine, repair orchestration, live Gemini/Polygon integration and unattended publishing.
+- **Not implemented yet:** automatic independent algorithm generation (agent skill prepared, runtime orchestration pending), stress/exhaustive test engine, repairs, Docker/Gemini/Polygon live integration and unattended publishing.
 
 ## Start an agent session
 
@@ -63,3 +63,14 @@ python3 -m factory spec validate problems/example_task/spec.json --json
 ~~~
 
 For image/scanned PDF transcription, see the guide for separately installing `requirements-vision.txt` and using `--vision-model`; this sends pages to an external model and **must be explicitly approved**. Every imported spec starts as a draft with unresolved review flags. No Polygon calls are made.
+
+## Verify a candidate solution (SOL-001)
+
+See [solution verification guide](docs/factory/SOLUTIONS.md). A reviewed V1 spec, C++17 candidate and **independently written** oracle are required; this does not call Polygon or Gemini.
+
+~~~bash
+python3 -m factory spec validate problems/<slug>/spec.json --ready
+python3 -m factory solutions verify problems/<slug> --candidate problems/<slug>/solutions/acc.cpp --oracle problems/<slug>/solutions/brute.cpp
+~~~
+
+Execution requires a locally available Docker compiler image (default `gcc:14`), without host compilation fallback or automatic image pull. `PASS_ON_TESTS` is agreement for these cases only, not proof of correctness. The agent guidance is in [factory-solve skill](.agents/skills/factory-solve/SKILL.md).
