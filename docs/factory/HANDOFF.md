@@ -1,4 +1,4 @@
-# Session handoff — 2026-10-15 (ING-001 normalized spec implementation)
+# Session handoff — 2026-10-16 (ING-002 source ingestion)
 
 ## Repository / branch
 
@@ -8,6 +8,7 @@
 - API-002 branch: `factory/api-002-package-verification-20261015` based on commit `b30173fee23215ac3e4a4ac42dee93d4f55a639e` from PR #1. Stacked PR: [#2 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/2), targeting the phase-0 branch.
 - API-003 branch: `factory/api-003-safe-sync-20261015` stacked on API-002 branch; Stacked PR: [#3 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/3), targeting API-002 branch.
 - ING-001 branch: `factory/ing-001-problem-spec-v1-20261015`, stacked on API-003. [stacked PR #4 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/4), targeting the API-003 branch.
+- ING-002 branch: `factory/ing-002-multimodal-ingestion-20261016`; [stacked PR #5 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/5) targeting ING-001 branch.
 - Base main commit at fork discovery: `0725d8874e41b2d39ba9d6d3b82b24c60887109b`.
 
 ## User's goal
@@ -57,7 +58,7 @@ Drop an existing programming problem (PDF/images/text) into a workspace; prefera
 
 1. Review PR #1 (base) → PR #2 (API-002) → PR #3 (API-003), CI and staged code. Rebase/retarget stacked PRs only after the base merges.
 2. API-INT-001 still requires a separately approved live integration trial on a user-specified private Polygon problem; do not call Polygon yet.
-3. Next coding task: **ING-002**. Start with plain-text/Markdown and deterministic fixtures before PDF/image OCR. Preserve sources and unknown semantics.
+3. Next coding task: **SOL-001**. Consume V1 spec and optional user idea/source code; create independent oracle/correctness evidence (no auto-publish).
 4. API-003 limitations: metadata-only remote comparisons, best-effort (non-atomic) revision guard and no rollback. These require integration review before unattended writes.
 
 ## Reporting contract
@@ -71,3 +72,13 @@ Never assume a previous plan was implemented. New session should confirm branch 
 - 5 valid + 8 invalid fixtures, unit tests, `requirements-factory.txt`, CI extension for Python 3.11/3.12 and a model-neutral `.agents/skills/factory-problem-spec/SKILL.md`.
 - Read [PROBLEM_SPEC_V1.md](PROBLEM_SPEC_V1.md). No calls to Polygon; no PDF/image ingestion yet. Do not confuse `--ready` with proof of correctness or Polygon publication readiness.
 - Upcoming ING-002 must preserve the same schema and capture text/region provenance; it is NOT implemented here.
+
+## ING-002 delivery (2026-10-16)
+
+- [PR #5](https://github.com/ntanthedev/polygon-problems-generator/pull/5) stacked on PR #4; files `factory/ingest.py`, `factory/gemini_vision.py`, `factory/__main__.py`, `tests/test_ingestion.py`, `tests/test_ingestion_media.py`, `docs/factory/INGESTION.md`, `.agents/skills/factory-ingest/SKILL.md`, `requirements-vision.txt`, `requirements-factory.txt`, CI workflow.
+- Offline command: `python3 -m factory ingest path/to/problem.pdf --slug simple_problem --dest problems/simple_problem`. Creates new directory only; stores **original file bytes**, SHA256, draft `spec.json`, and `evidence.json`. Optional `--idea` and `--solution-file` copy guidance without execution.
+- TXT/MD: native UTF-8 preservation and conservative section parser. PDF: PyMuPDF native text-block extraction with page coordinates. Scanned PDF/image: no text means blocked draft by default. **Explicit** `--vision-model MODEL_ID` uses Gemini Interactions API for per-page PNG transcription; local key needed. Every vision transcript remains pending review; no invented constraints or auto-READY.
+- Safety: no remote Polygon activity, no direct file overwrite, 20 MiB input and 32-page budget, model/page render caps, sanitized provider errors. Input source paths and user source code should remain under user control.
+- CI [run 38777154334](https://github.com/ntanthedev/polygon-problems-generator/actions/runs/38777154334): **105 tests PASS** on Python 3.11 and 3.12. Later nonfunctional code/docs updates require confirmation on latest SHA. Vision tests use MOCK, not an actual Gemini API key or live model.
+- No claim that generic PDFs with complex columns/tables are transcribed perfectly; final review must inspect `evidence.json` and source. Algorithm solving, generator creation and end-to-end Polygon publishing are future tasks.
+- **Next SOL-001**: issue scoped tasks for a strong reasoning model (derive oracle), or weaker model with user-provided idea/code. **ING-LIVE-001** requires separate opt-in to send a disposable non-sensitive source through Gemini and verify SDK/model behavior.

@@ -2,11 +2,11 @@
 
 This is a fork of [7oSkaaa/polygon-problems-generator](https://github.com/7oSkaaa/polygon-problems-generator). The original idea-to-problem pipeline remains available. **Factory** is an incremental extension for importing an existing problem, optionally using a user-provided algorithm or accepted solution, generating strong tests, and synchronizing to Polygon.
 
-## Current reality (2026-10-15)
+## Current reality (2026-10-16)
 
-- **Implemented in this stacked branch:** governance docs, structural preflight, API timeout/error handling, mock-verified package polling, read-only sync planning, and offline V1 problem-spec schema/adapter.
+- **Implemented in this stacked branch:** governance docs, structural preflight, API timeout/error handling, mock-verified package polling, read-only sync planning, versioned V1 spec, and offline-first TXT/Markdown/PDF/image ingestion with opt-in Gemini vision adapter.
 - **Inherited upstream, not yet revalidated on a real account:** the Claude-oriented agent roles, local `verify.sh`, and `polyup` Polygon upload flow.
-- **Not implemented yet:** text/PDF/image ingestion (ING-002), algorithm discovery, strong-test engine, repair orchestration, live Polygon integration and unattended publishing.
+- **Not implemented yet:** independent solution/oracle generation (SOL-001), strong-test engine, repair orchestration, live Gemini/Polygon integration and unattended publishing.
 
 ## Start an agent session
 
@@ -51,3 +51,15 @@ python3 -m factory spec validate problems/<name>/spec.json --ready
 ~~~
 
 The converter creates a DRAFT with explicit unknown constraints/case/output semantics; readiness normally fails until reviewed. No Polygon writes occur.
+
+## Drop a statement into Factory (ING-002)
+
+See [ingestion guide](docs/factory/INGESTION.md). The following command is **offline** by default:
+
+~~~bash
+python3 -m pip install -r requirements-factory.txt
+python3 -m factory ingest ./inputs/task.pdf --slug example_task --dest problems/example_task
+python3 -m factory spec validate problems/example_task/spec.json --json
+~~~
+
+For image/scanned PDF transcription, see the guide for separately installing `requirements-vision.txt` and using `--vision-model`; this sends pages to an external model and **must be explicitly approved**. Every imported spec starts as a draft with unresolved review flags. No Polygon calls are made.
