@@ -7,7 +7,7 @@
 - PR #1 (Draft): [initial Factory M0 + API-001](https://github.com/ntanthedev/polygon-problems-generator/pull/1).
 - API-002 branch: `factory/api-002-package-verification-20261015` based on commit `b30173fee23215ac3e4a4ac42dee93d4f55a639e` from PR #1. Stacked PR: [#2 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/2), targeting the phase-0 branch.
 - API-003 branch: `factory/api-003-safe-sync-20261015` stacked on API-002 branch; Stacked PR: [#3 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/3), targeting API-002 branch.
-- ING-001 branch: `factory/ing-001-problem-spec-v1-20261015`, stacked on API-003. PR #4 pending creation at handoff update.
+- ING-001 branch: `factory/ing-001-problem-spec-v1-20261015`, stacked on API-003. [stacked PR #4 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/4), targeting the API-003 branch.
 - Base main commit at fork discovery: `0725d8874e41b2d39ba9d6d3b82b24c60887109b`.
 
 ## User's goal
