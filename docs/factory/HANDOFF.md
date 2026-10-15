@@ -1,4 +1,4 @@
-# Session handoff — 2026-10-16 (ING-002 source ingestion)
+# Session handoff — 2026-10-16 (SOL-001 candidate/oracle verification)
 
 ## Repository / branch
 
@@ -9,6 +9,7 @@
 - API-003 branch: `factory/api-003-safe-sync-20261015` stacked on API-002 branch; Stacked PR: [#3 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/3), targeting API-002 branch.
 - ING-001 branch: `factory/ing-001-problem-spec-v1-20261015`, stacked on API-003. [stacked PR #4 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/4), targeting the API-003 branch.
 - ING-002 branch: `factory/ing-002-multimodal-ingestion-20261016`; [stacked PR #5 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/5) targeting ING-001 branch.
+- SOL-001 branch: `factory/sol-001-reference-check-20261016` stacked on ING-002 [PR #5](https://github.com/ntanthedev/polygon-problems-generator/pull/5); [Draft PR #6](https://github.com/ntanthedev/polygon-problems-generator/pull/6) created, targeting the ING-002 branch.
 - Base main commit at fork discovery: `0725d8874e41b2d39ba9d6d3b82b24c60887109b`.
 
 ## User's goal
@@ -58,7 +59,7 @@ Drop an existing programming problem (PDF/images/text) into a workspace; prefera
 
 1. Review PR #1 (base) → PR #2 (API-002) → PR #3 (API-003), CI and staged code. Rebase/retarget stacked PRs only after the base merges.
 2. API-INT-001 still requires a separately approved live integration trial on a user-specified private Polygon problem; do not call Polygon yet.
-3. Next coding task: **SOL-001**. Consume V1 spec and optional user idea/source code; create independent oracle/correctness evidence (no auto-publish).
+3. Next coding task: **QA-001**. Add seeded/exhaustive/differential test-generation budgets and minimized reproducible counterexamples atop SOL-001. SOL-LIVE-001 was checked on 2026-10-16 and stays BLOCKED: this ThinkPad has Docker Engine 28.5.2 but no local `gcc:14`, and it is not a disposable VM. Do not pull the image or run the fixture here without a new approval.
 4. API-003 limitations: metadata-only remote comparisons, best-effort (non-atomic) revision guard and no rollback. These require integration review before unattended writes.
 
 ## Reporting contract
@@ -82,3 +83,21 @@ Never assume a previous plan was implemented. New session should confirm branch 
 - CI [run 38777661492](https://github.com/ntanthedev/polygon-problems-generator/actions/runs/38777661492): **106 tests PASS** on Python 3.11 and 3.12. Latest code CI confirmed on Python 3.11 and 3.12. Vision tests use MOCK, not an actual Gemini API key or live model.
 - No claim that generic PDFs with complex columns/tables are transcribed perfectly; final review must inspect `evidence.json` and source. Algorithm solving, generator creation and end-to-end Polygon publishing are future tasks.
 - **Next SOL-001**: issue scoped tasks for a strong reasoning model (derive oracle), or weaker model with user-provided idea/code. **ING-LIVE-001** requires separate opt-in to send a disposable non-sensitive source through Gemini and verify SDK/model behavior.
+
+## SOL-001 delivery (2026-10-16)
+
+- Branch `factory/sol-001-reference-check-20261016` on top of PR #5. Added `factory/solution_check.py` (reviewed V1 spec, optional user code, C++17 candidate/oracle agreements, sample and extra cases, verdicts WA/TLE/RE/MLE/OLE/oracle failures, source/input hashes), `factory/docker_runner.py` (Docker-only compilation/execution with read-only/networkless nonroot containers, CPU/memory/pid/time/file caps, symlink/FIFO-resistant guest output), CLI `factory solutions verify`, tests, synthetic fixture, and `.agents/skills/factory-solve/SKILL.md`.
+- Guidance for three modes: statement-only → derive candidate/oracle; statement+idea → challenge untrusted idea; statement+solution → treat user source as candidate and derive oracle separately. **No automatic LLM reasoning runtime has been added**: only agent skill and deterministic tools.
+- Result `PASS_ON_TESTS` means agreement on a limited input corpus, not proof. Runner accepts reviewed `outputPolicy=exact` noninteractive tasks only, and marks `oracleIsProvenCorrect=false`.
+- Latest mock/offline CI [run 38780833767](https://github.com/ntanthedev/polygon-problems-generator/actions/runs/38780833767) passed **136 tests** on Python 3.11/3.12, including readiness gate and symlink/FIFO/output bounds. Source compileall PASS. This does **not** execute a real Docker image.
+- No real Docker container compilation/execution performed in the SOL-001 implementation session. Test fixture and instructions in [SOLUTIONS.md](SOLUTIONS.md).
+- QA-001 next: generate small-domain systematic/random case corpora with explicit oracle resource budgets, seeded reproducibility, counterexample minimizing, saved regressions. Keep checker-specific tasks deferred.
+
+## SOL-LIVE-001 check (2026-10-16) — BLOCKED
+
+- Branch stayed `factory/sol-001-reference-check-20261016`. After `git fetch`, HEAD and `origin` were both `12e2f705feb067d63802cdeb982986e19cf4f9f8`. Working tree was clean before this note. No checkout was required.
+- Commands actually run: `git fetch` / `git status` / `git rev-parse`; `python -m unittest discover -s tests -v`; `python --version`; `docker version`; `docker image inspect gcc:14`; a host probe (computer name, manufacturer, model, hypervisor flag, and whether named API environment variables were set). No Polygon API, Gemini API, image pull, or fixture execution.
+- Python 3.13.0 unit result on this Windows host: **136 ran, 1 failure, 2 errors, 1 skip**. Not a clean local PASS. Failure: `tests/test_problem_spec.py` `test_optional_user_idea_and_solution` expects `Use long long.\n` and observed `Use long long.\r\n` (ING-001 text newline; left unchanged). Errors: SOL-001 symlink tests cannot create links here (`WinError 1314`). Skip: FIFO test, no `os.mkfifo`. Prior Linux CI run 38780833767 remains the 136-test PASS evidence and still does not prove Docker behavior.
+- Docker client/engine 28.5.2, Desktop 4.51.0, `desktop-linux` / `linux/amd64`. `docker image inspect gcc:14` returned `No such image`. Pull was not performed.
+- Host is physical Lenovo ThinkPad model `21ED0069VN` (`THINKPAD`, user `nhatt`). It is not a disposable VM/test host without personal data, so the `factory/fixtures/solution_smoke/` Docker command was not run. Compile, runtime, verdict, timeout, cgroup limits, container cleanup, and "no host execution" were **NOT_RUN**.
+- **SOL-LIVE-001 stays BLOCKED.** Do not mark it DONE. A later attempt needs both a locally reviewed `gcc:14` image and a disposable host; this laptop satisfies neither condition for the smoke test.

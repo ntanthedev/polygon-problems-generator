@@ -1,4 +1,4 @@
-# Execution board — updated 2026-10-16 (ING-002)
+# Execution board — updated 2026-10-16 (SOL-LIVE-001 blocked)
 
 States: `TODO`, `IN_PROGRESS`, `BLOCKED`, `DONE`. The board reflects **verified work**, not agent intentions. Do one narrow task/PR at a time.
 
@@ -13,7 +13,8 @@ States: `TODO`, `IN_PROGRESS`, `BLOCKED`, `DONE`. The board reflects **verified 
 | ING-001 | DONE | Strict versioned spec, 4 input modes, offline CLI and local Polygon adapter | 5 valid/8 invalid JSON fixtures + Python tests; 83 tests PASS (3.11/3.12), CI run 38772106942 |
 | ING-002 | DONE | Offline-first TXT/Markdown/PDF/image drafts, page/bbox evidence, optional Gemini vision adapter | 106 mock/offline tests PASS (3.11/3.12) CI run 38777661492; Gemini live NOT_RUN |
 | ING-LIVE-001 | BLOCKED | Live Gemini vision smoke test on a non-sensitive disposable source | User opt-in, available API model and local key required; no external calls made |
-| SOL-001 | TODO | Three input modes (no hint / idea / user solution) | Independent oracle tests |
+| SOL-001 | DONE | Three modes supported by V1 + solve-agent skill, deterministic C++17 candidate/oracle checker, Docker isolation | 136 mocked/offline tests PASS (Python 3.11/3.12); real Docker runtime pending SOL-LIVE-001 |
+| SOL-LIVE-001 | BLOCKED | Disposable Docker smoke test for solution runner (no credentials) | 2026-10-16 on this host: Docker Engine 28.5.2 is up, local image `gcc:14` is absent and was not pulled; host is a physical Lenovo ThinkPad, not a disposable VM. Fixture smoke NOT_RUN |
 | QA-001 | TODO | Differential+exhaustive runner | Seeded counterexample + resource limits |
 | QA-002 | TODO | Boundary/adversarial/mutation testing | Mutant coverage and regression output |
 | AG-001 | TODO | Platform-neutral skills and Antigravity subagent integration | Agent handoff passes on at least one sample |
@@ -21,7 +22,7 @@ States: `TODO`, `IN_PROGRESS`, `BLOCKED`, `DONE`. The board reflects **verified 
 
 ### Immediate next execution task
 
-**API-003 implementation is in [stacked PR #3](https://github.com/ntanthedev/polygon-problems-generator/pull/3)** (on PR #2). ING-002 is implemented on [stacked PR #5](https://github.com/ntanthedev/polygon-problems-generator/pull/5) atop PR #4. CI passes mocked/offline behavior; **live Gemini remains BLOCKED on explicit opt-in**. Next substantial coding task: **SOL-001 — independent solution/oracle verification using optional user idea/code**, followed by QA-001. Review/merge upstream stacked PRs in order before local use. The real Polygon smoke test API-INT-001 remains BLOCKED without an authorized private problem. Existing API implementation has mock CI only, not verified against live Polygon. Do not enable unattended publishing yet. No unconditional retry of mutating API calls.
+**API-003 implementation is in [stacked PR #3](https://github.com/ntanthedev/polygon-problems-generator/pull/3)** (on PR #2). ING-002 is implemented on [stacked PR #5](https://github.com/ntanthedev/polygon-problems-generator/pull/5) atop PR #4. CI passes mocked/offline behavior; **live Gemini remains BLOCKED on explicit opt-in**. SOL-001 implemented in [stacked PR #6](https://github.com/ntanthedev/polygon-problems-generator/pull/6) using a deterministic C++17 Docker-backed comparator and model-neutral solve skill; no LLM algorithm-generation service is claimed. Next task: **QA-001** — seeded differential/exhaustive runner and reproducible counterexample minimization. Local Docker smoke SOL-LIVE-001 was attempted on 2026-10-16 and remains BLOCKED: Docker Engine 28.5.2 is running, but `gcc:14` is not installed locally and this host is a physical ThinkPad rather than a disposable VM. Do not pull the image or run the fixture here without a separate approval and a disposable host. Do not enable unattended execution or publishing yet. Review/merge upstream stacked PRs in order before local use. The real Polygon smoke test API-INT-001 remains BLOCKED without an authorized private problem. Existing API implementation has mock CI only, not verified against live Polygon. Do not enable unattended publishing yet. No unconditional retry of mutating API calls.
 
 API-001 contract (CI validated on [PR #1](https://github.com/ntanthedev/polygon-problems-generator/pull/1)):
 
@@ -45,3 +46,13 @@ Each change: task ID → files changed → tests run + results → risks → PR/
 ING-001 evidence: [GitHub Actions run 38772106942](https://github.com/ntanthedev/polygon-problems-generator/actions/runs/38772106942) — 83 tests PASS on Python 3.11 + 3.12, compileall PASS. Tests live in `tests/test_problem_spec.py`; [V1 contract](PROBLEM_SPEC_V1.md). Importing with `factory spec from-local` outputs draft only. No real Polygon calls or uploads were made.
 
 ING-002 CI: [run 38777661492](https://github.com/ntanthedev/polygon-problems-generator/actions/runs/38777661492) — 106 tests PASS on Python 3.11 and 3.12; later `GeminiVision` exception sanitization and documentation updates require latest-head CI confirmation. No live Gemini or Polygon requests. The model-neutral vision protocol allows alternative providers, but only Gemini Interactions has a concrete adapter in this branch. See [INGESTION.md](INGESTION.md).
+
+SOL-001 CI evidence: [latest GitHub Actions run 38780833767](https://github.com/ntanthedev/polygon-problems-generator/actions/runs/38780833767) — **136 tests PASS** on Python 3.11 and 3.12 including symlink/FIFO regression and readiness tests. That run does not execute a real container. Synthetic reproducible addition fixture: `factory/fixtures/solution_smoke/`. Reports show `PASS_ON_TESTS`, not proven correctness. See [SOLUTIONS.md](SOLUTIONS.md).
+
+SOL-LIVE-001 local evidence (2026-10-16, branch `factory/sol-001-reference-check-20261016` at `12e2f705feb067d63802cdeb982986e19cf4f9f8`, before this note):
+
+- `python -m unittest discover -s tests -v` on Python 3.13.0 (Windows): **Ran 136 tests, FAILED (failures=1, errors=2, skipped=1)**. This is not the Linux CI result. The failure is `test_optional_user_idea_and_solution` (idea text keeps `\r\n` on Windows; ING-001, not changed here). The errors are `test_symlink_test_case_refused` and `test_guest_output_symlink_cannot_read_host_file` (`WinError 1314`, this account cannot create symlinks). The skip is `test_guest_fifo_is_rejected_without_blocking` because Windows has no `os.mkfifo`.
+- `docker version`: client and engine **28.5.2**, context `desktop-linux`, server OS/Arch `linux/amd64`, Docker Desktop 4.51.0.
+- `docker image inspect gcc:14`: **No such image**. Image was not pulled.
+- Host probe: computer `THINKPAD`, manufacturer `LENOVO`, model `21ED0069VN`, user `nhatt`. `HypervisorPresent=True` comes from the local virtualization stack on this laptop; it is not a disposable test VM. Checked Polygon/Gemini/OpenAI environment variable names were unset; values were not printed.
+- `python -m factory solutions verify factory/fixtures/solution_smoke ...`: **NOT_RUN**. Compile, execution, verdict, timeout, resource limits, container cleanup, and host-execution isolation were not observed on a real container.
