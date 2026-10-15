@@ -76,7 +76,7 @@ class DockerRunner:
             "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
             "--pids-limit", "64", "--cpus", "1", "--memory", memory,
             "--memory-swap", memory, "--user", f"{uid}:{gid}",
-            "--ulimit", "fsize=4096:4096", "--ulimit", "nofile=64:64",
+            "--ulimit", "fsize=8388608:8388608", "--ulimit", "nofile=64:64",
             "--tmpfs", "/tmp:rw,nosuid,nodev,size=64m,mode=1777",
         ]
         for path, dest, readonly in mounts:

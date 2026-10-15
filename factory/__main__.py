@@ -1,4 +1,4 @@
-"""Factory CLI (offline spec operations only in ING-001)."""
+"""Factory CLI — ingestion, V1 spec and isolated C++17 solution checks."""
 from __future__ import annotations
 
 import argparse
@@ -41,8 +41,37 @@ def main(argv=None) -> int:
                      default="cpp17")
     ing.add_argument("--vision-model", help="OPT-IN: send image/PDF pages to Gemini model ID (requires GEMINI_API_KEY)")
 
+    sols = commands.add_parser("solutions", help="Check a user/agent solution against an independent oracle")
+    sol_actions = sols.add_subparsers(dest="solution_action", required=True)
+    verify = sol_actions.add_parser("verify", help="Run reviewed C++17 exact-output cases in Docker")
+    verify.add_argument("problem_dir", type=Path, help="Folder containing reviewed spec.json")
+    verify.add_argument("--candidate", type=Path, help="Candidate C++ source, otherwise guidance.solution.file")
+    verify.add_argument("--oracle", type=Path, required=True, help="INDEPENDENT brute/reference C++ source")
+    verify.add_argument("--tests-dir", type=Path, help="Optional folder of .in and optional .out cases")
+    verify.add_argument("--timeout", type=float, default=2.0, help="Wall seconds per test (0.1–30)")
+    verify.add_argument("--image", default="gcc:14", help="Locally available C++ Docker image; never auto-pulled")
+    verify.add_argument("--report", type=Path, help="Create report JSON exclusively, refuse overwrites")
+
     args = p.parse_args(argv)
     try:
+        if args.group == "solutions":
+            from .solution_check import resolve_candidate, verify_candidate
+            from .docker_runner import DockerRunner
+            spec = parse_json((args.problem_dir / "spec.json").read_text(encoding="utf-8"))
+            candidate = resolve_candidate(args.problem_dir, spec, args.candidate)
+            with DockerRunner(image=args.image) as isolated:
+                report = verify_candidate(
+                    spec, candidate=candidate, oracle=args.oracle,
+                    test_dir=args.tests_dir, timeout_s=args.timeout, runner=isolated
+                )
+            serialized = json.dumps(report, indent=2, ensure_ascii=False) + "\n"
+            if args.report:
+                with args.report.open("x", encoding="utf-8") as output:
+                    output.write(serialized)
+                print(f"Saved solution agreement report to {args.report}")
+            else:
+                print(serialized, end="")
+            return 0 if report["verdict"] == "PASS_ON_TESTS" else 1
         if args.group == "ingest":
             provider = None
             if args.vision_model:
