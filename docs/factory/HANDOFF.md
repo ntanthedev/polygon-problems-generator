@@ -4,7 +4,7 @@
 
 - Repository: `ntanthedev/polygon-problems-generator` (fork of `7oSkaaa/polygon-problems-generator`).
 - Working branch for initial factory work: `factory/phase-0-governance-preflight-20261015`.
-- PR: pending creation at time of initial document generation. Check GitHub for the current link.
+- PR: [#1 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/1), initial Factory M0.
 - Base main commit at fork discovery: `0725d8874e41b2d39ba9d6d3b82b24c60887109b`.
 
 ## User's goal
@@ -22,16 +22,16 @@ Drop an existing programming problem (PDF/images/text) into a workspace; prefera
 
 ## Current work and limits
 
-- Governance docs and structural preflight implementation are prepared for initial PR. **Only treat PF-001 as DONE after tests actually run.**
+- Governance docs, offline preflight CLI, skill and 7 unit tests implemented on PR #1. **PF-001 DONE** based on GitHub Actions [run 38756769808](https://github.com/ntanthedev/polygon-problems-generator/actions/runs/38756769808): `compileall` and tests passed on Python 3.11 and 3.12. GitHub CI is the actual execution evidence; local container clone was blocked by DNS.
 - No authorized real Polygon upload has been run; no PDF/vision ingestion implementation yet.
 - `python3 -m polyup preflight ...` is intended to inspect local files only and does not validate algorithm correctness.
 
 ## Next session
 
-1. Check PR and branch, inspect `docs/factory/TASKS.md`.
-2. Run `python3 -m unittest discover -s tests -v` and test preflight on one real `problems/<name>` folder; note result.
-3. Fix PF-001 problems, close task on evidence.
-4. Start API-001 in a new small PR: timeouts, structured errors, tests. Verify no behavior regressions in `sync.py`.
+1. Check PR #1 / CI on its latest SHA, inspect `docs/factory/TASKS.md`.
+2. Optional: test `python3 -m polyup preflight problems/<name> --json` on a real complete problem folder; it only checks structure.
+3. Review and merge PR #1 when satisfied.
+4. Start API-001 in a separate small PR: timeouts, structured errors, mocked network tests. Verify no behavior regressions in `sync.py`.
 5. After API-001, work toward M1 package polling and ingestion, not UI/contest tooling.
 
 ## Reporting contract

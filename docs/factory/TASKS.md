@@ -5,7 +5,7 @@ States: `TODO`, `IN_PROGRESS`, `BLOCKED`, `DONE`. The board reflects **verified 
 | ID | State | Task | Acceptance / evidence |
 |---|---|---|---|
 | GOV-001 | DONE | Establish project governance, agent handoff, roadmap and prompt templates | All linked documents created in branch |
-| PF-001 | IN_PROGRESS | Read-only local problem preflight + offline tests | Run `python3 -m unittest discover -s tests -v`; verify CLI behavior |
+| PF-001 | DONE | Read-only local problem preflight + offline tests | Run `python3 -m unittest discover -s tests -v`; verify CLI behavior |
 | API-001 | TODO | API client error model, timeout, credential-safe logging | Unit tests for network/HTTP/JSON failures |
 | API-002 | TODO | Poll and verify remote package state after build | Mock lifecycle tests + authorized live trial |
 | API-003 | TODO | Real pre-sync plan, dry-run and safe re-sync | No unexpected remote writes |
@@ -19,9 +19,9 @@ States: `TODO`, `IN_PROGRESS`, `BLOCKED`, `DONE`. The board reflects **verified 
 
 ### Immediate next execution task
 
-**PF-001** first. Confirm the unit tests run on Linux and `python3 -m polyup preflight <path>` returns actionable errors without touching Polygon. Address any bugs found in a follow-up patch; mark DONE only with command + result in HANDOFF.
+**API-001** next. Inspect `polyup/api.py` and its callers to preserve API behavior, add explicit network timeout, safe exception semantics and mock-based tests. Do **not** implement unconditional retries of side-effecting `problem.create`, `saveFile`, `commitChanges`, or `buildPackage`.
 
-Then **API-001**. Inspect `polyup/api.py` and its callers to preserve API behavior, add explicit network timeout, safe exception semantics and mock-based tests. Do **not** implement unconditional retries of side-effecting `problem.create`, `saveFile`, `commitChanges`, or `buildPackage`.
+PF-001: GitHub Actions [run 38756769808](https://github.com/ntanthedev/polygon-problems-generator/actions/runs/38756769808) confirmed `compileall` + 7 offline unit tests PASS on Python 3.11 and 3.12. Manual run against a full real problem remains an optional extra validation. Inspect `polyup/api.py` and its callers to preserve API behavior, add explicit network timeout, safe exception semantics and mock-based tests. Do **not** implement unconditional retries of side-effecting `problem.create`, `saveFile`, `commitChanges`, or `buildPackage`.
 
 ### Task protocol
 
