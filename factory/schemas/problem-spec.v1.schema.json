@@ -1,0 +1,389 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ntanthedev/polygon-problems-generator/blob/main/factory/schemas/problem-spec.v1.schema.json",
+  "title": "AI Polygon Problem Factory — problem specification v1",
+  "description": "Normalized imported/idea problem data; schema validity does not imply mathematical or publishing correctness.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z][a-z_]*$"
+    },
+    "mode": {
+      "enum": [
+        "statement-only",
+        "statement+idea",
+        "statement+solution",
+        "new-idea"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "polygon-tex",
+            "plain-text",
+            "markdown",
+            "latex",
+            "image",
+            "pdf",
+            "docx",
+            "idea"
+          ]
+        },
+        "path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sha256": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rawText": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "extraction": {
+          "enum": [
+            "native-text",
+            "vision",
+            "manual",
+            "not-processed"
+          ]
+        },
+        "reviewStatus": {
+          "enum": [
+            "pending",
+            "verified"
+          ]
+        },
+        "attribution": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "path",
+        "sha256",
+        "rawText",
+        "extraction",
+        "reviewStatus",
+        "attribution"
+      ]
+    },
+    "statement": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "language": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 32
+        },
+        "legend": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "input": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "output": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "interactive": {
+          "type": "boolean"
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "expression": {
+                "type": "string",
+                "minLength": 1
+              },
+              "scope": {
+                "enum": [
+                  "per-case",
+                  "per-file",
+                  "sum-over-cases",
+                  "global"
+                ]
+              },
+              "sourceExcerpt": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "expression",
+              "scope",
+              "sourceExcerpt"
+            ]
+          }
+        },
+        "samples": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "input": {
+                "type": "string"
+              },
+              "output": {
+                "type": "string"
+              },
+              "explanation": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "input",
+              "output",
+              "explanation"
+            ]
+          }
+        }
+      },
+      "required": [
+        "title",
+        "language",
+        "legend",
+        "input",
+        "output",
+        "notes",
+        "interactive",
+        "constraints",
+        "samples"
+      ]
+    },
+    "guidance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "idea": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "type": "string",
+              "minLength": 1
+            },
+            "providedBy": {
+              "enum": [
+                "user",
+                "agent"
+              ]
+            }
+          },
+          "required": [
+            "text",
+            "providedBy"
+          ]
+        },
+        "solution": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "language": {
+              "enum": [
+                "cpp17",
+                "java21",
+                "python3",
+                "other"
+              ]
+            },
+            "providedBy": {
+              "enum": [
+                "user",
+                "agent"
+              ]
+            },
+            "file": {
+              "type": "string",
+              "minLength": 1
+            },
+            "code": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "language",
+            "providedBy"
+          ],
+          "oneOf": [
+            {
+              "required": [
+                "file"
+              ],
+              "not": {
+                "required": [
+                  "code"
+                ]
+              }
+            },
+            {
+              "required": [
+                "code"
+              ],
+              "not": {
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "required": []
+    },
+    "ambiguities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "type": "string",
+            "minLength": 1
+          },
+          "issue": {
+            "type": "string",
+            "minLength": 1
+          },
+          "severity": {
+            "enum": [
+              "blocking",
+              "advisory"
+            ]
+          },
+          "sourceExcerpt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "field",
+          "issue",
+          "severity",
+          "sourceExcerpt"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "slug",
+    "mode",
+    "source",
+    "statement",
+    "guidance",
+    "ambiguities"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "statement+idea"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "guidance": {
+            "required": [
+              "idea"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "statement+solution"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "guidance": {
+            "required": [
+              "solution"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "new-idea"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "guidance": {
+            "required": [
+              "idea"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

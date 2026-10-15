@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "slug": "two_sum",
+  "mode": "statement-only",
+  "source": {
+    "kind": "plain-text",
+    "path": "source/problem.txt",
+    "sha256": null,
+    "rawText": "Compute the sum of two integers.",
+    "extraction": "manual",
+    "reviewStatus": "verified",
+    "attribution": null
+  },
+  "statement": {
+    "title": "Two Sum",
+    "language": "en",
+    "legend": "Find the sum of a and b.",
+    "input": "The input contains two integers a and b.",
+    "output": "Output their sum.",
+    "notes": null,
+    "interactive": false,
+    "constraints": [
+      {
+        "expression": "-10^9 <= a, b <= 10^9",
+        "scope": "per-file",
+        "sourceExcerpt": "-10^9 <= a, b <= 10^9"
+      }
+    ],
+    "samples": [
+      {
+        "input": "2 3\n",
+        "output": "5\n",
+        "explanation": null
+      }
+    ]
+  },
+  "guidance": {},
+  "ambiguities": []
+}
