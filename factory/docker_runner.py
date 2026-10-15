@@ -27,7 +27,7 @@ RUN_WALL_SLACK_SECONDS = 3
 def _read_guest_file(path: Path, limit: int) -> tuple[bytes | None, int]:
     """Read a regular guest-created file, never following a malicious symlink."""
     try:
-        fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0))
     except FileNotFoundError:
         return None, 0
     except OSError:
@@ -162,6 +162,8 @@ class DockerRunner:
         program = output / "program"
         if program.is_symlink():
             raise ProblemSpecError("Compiler produced a symlink instead of an executable")
+        if status in {125, 126, 127} and log is None:
+            raise ProblemSpecError("Docker failed to start compilation container")
         if status != 0 or not program.is_file():
             return Execution("COMPILE_ERROR", detail=detail or "Compiler failed; inspect Docker environment")
         return Execution("OK")
@@ -205,6 +207,8 @@ class DockerRunner:
             return Execution("OLE", detail="Execution exceeded output file limit")
         if status == 137:
             return Execution("MLE", detail="Container killed (possible memory limit)")
+        if status in {125, 126, 127} and stdout is None and stderr is None:
+            raise ProblemSpecError("Docker failed to start execution container")
         if status != 0:
             err = (stderr or b"").decode("utf-8", "replace")
             return Execution("RE", detail=f"Process exit={status}. {err}")

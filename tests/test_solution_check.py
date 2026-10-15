@@ -267,6 +267,16 @@ class DockerPolicyTests(unittest.TestCase):
                 _read_guest_file(link, 128)
             self.assertEqual(secret.read_text(), "HOST_PRIVATE_SECRET")
 
+    def test_guest_fifo_is_rejected_without_blocking(self):
+        import os
+        if not hasattr(os, "mkfifo"):
+            self.skipTest("FIFOs are unavailable")
+        with tempfile.TemporaryDirectory() as tmp:
+            fifo = Path(tmp) / "guest_fifo"
+            os.mkfifo(fifo)
+            with self.assertRaisesRegex(ProblemSpecError, "not a regular"):
+                _read_guest_file(fifo, 128)
+
     def test_guest_regular_file_read_is_bounded(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "guest_stdout"
