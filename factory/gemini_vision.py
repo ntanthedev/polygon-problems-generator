@@ -31,7 +31,13 @@ class GeminiVision:
                 "Install requirements-vision.txt for Gemini transcription"
             ) from None
         # Key is read from local environment by SDK, not logged or serialized.
-        self.client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+        try:
+            self.client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+        except Exception as exc:
+            # Avoid printing provider exceptions that may embed credentials.
+            raise ProblemSpecError(
+                f"Gemini client initialization failed ({type(exc).__name__})"
+            ) from None
 
     def transcribe(self, data: bytes, mime_type: str, prompt: str) -> str:
         if mime_type not in {"image/png", "image/jpeg", "image/webp"}:
