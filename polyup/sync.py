@@ -6,7 +6,7 @@ from pathlib import Path
 from .api import PolygonAPI
 from .package_monitor import PackageVerificationError, build_and_wait
 from .config import SyncConfig
-from .sync_plan import UnsafeSyncError, assert_remote_unchanged, build_sync_plan
+from .sync_plan import UnsafeSyncError, assert_remote_unchanged, assert_local_unchanged, build_sync_plan
 from .parsers import (
     detect_problem_name,
     detect_standard_checker,
@@ -33,6 +33,7 @@ def sync_problem(
         raise UnsafeSyncError("Existing problem requires explicit --allow-overwrite")
     if plan["mode"] == "update" and not plan["remoteInspected"]:
         raise UnsafeSyncError("Cannot apply an update without read-only remote pre-sync inspection")
+    assert_local_unchanged(problem_dir, plan)
     meta_path = problem_dir / ".polygon.json"
     meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
     problem_id = meta.get("problemId")
@@ -75,6 +76,7 @@ def sync_problem(
     # Catch concurrent committed revision changes before committing ourselves.
     # This is best-effort, not an atomic lock.
     assert_remote_unchanged(api, plan)
+    assert_local_unchanged(problem_dir, plan)
     _commit_and_build(api, pid, config)
     if config.grant_access:
         _sync_access(api, pid, config)
