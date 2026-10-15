@@ -6,7 +6,7 @@
 - Working branch for initial factory work: `factory/phase-0-governance-preflight-20261015`.
 - PR #1 (Draft): [initial Factory M0 + API-001](https://github.com/ntanthedev/polygon-problems-generator/pull/1).
 - API-002 branch: `factory/api-002-package-verification-20261015` based on commit `b30173fee23215ac3e4a4ac42dee93d4f55a639e` from PR #1. Stacked PR: [#2 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/2), targeting the phase-0 branch.
-- API-003 branch: `factory/api-003-safe-sync-20261015` stacked on API-002 branch; PR #3 pending creation at this handoff update.
+- API-003 branch: `factory/api-003-safe-sync-20261015` stacked on API-002 branch; Stacked PR: [#3 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/3), targeting API-002 branch.
 - Base main commit at fork discovery: `0725d8874e41b2d39ba9d6d3b82b24c60887109b`.
 
 ## User's goal
