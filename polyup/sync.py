@@ -382,9 +382,9 @@ def list_accesses(api: PolygonAPI, problem_id: str):
 
 
 def _print_cautions(api: PolygonAPI, pid: dict):
-    data = api.call("problem.cautions", **pid, fatal=False)
-    if not data:
-        return
+    data = api.call("problem.cautions", **pid)
+    if not isinstance(data, dict):
+        raise UnsafeSyncError("Unexpected Polygon cautions response")
     hard = []
     for key in ("common", "statement", "structure", "issues"):
         for item in data.get(key) or []:
@@ -392,10 +392,15 @@ def _print_cautions(api: PolygonAPI, pid: dict):
                 hard.append(item.get("message") or item.get("type"))
     ready = data.get("packageReadinessIssues") or []
     warns = data.get("latestPackageWarnings") or []
-    if not hard and not ready and not warns:
+    if hard or ready:
+        detail = "; ".join(str(x) for x in hard[:5]) or "; ".join(
+            str(issue.get("message") or issue.get("type")) for issue in ready[:5]
+        )
+        raise UnsafeSyncError("Polygon reports blocking cautions/readiness issues: " + detail)
+    if not warns:
         print("Cautions: none (HARD)")
         return
-    print("Polygon cautions:")
+    print("Polygon non-blocking warnings:")
     for msg in hard:
         print(f"  HARD  {msg}")
     for issue in ready:
