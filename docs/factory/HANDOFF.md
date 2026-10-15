@@ -9,7 +9,7 @@
 - API-003 branch: `factory/api-003-safe-sync-20261015` stacked on API-002 branch; Stacked PR: [#3 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/3), targeting API-002 branch.
 - ING-001 branch: `factory/ing-001-problem-spec-v1-20261015`, stacked on API-003. [stacked PR #4 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/4), targeting the API-003 branch.
 - ING-002 branch: `factory/ing-002-multimodal-ingestion-20261016`; [stacked PR #5 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/5) targeting ING-001 branch.
-- SOL-001 branch: `factory/sol-001-reference-check-20261016` stacked on ING-002 [PR #5](https://github.com/ntanthedev/polygon-problems-generator/pull/5); new PR #6 to be created.
+- SOL-001 branch: `factory/sol-001-reference-check-20261016` stacked on ING-002 [PR #5](https://github.com/ntanthedev/polygon-problems-generator/pull/5); [Draft PR #6](https://github.com/ntanthedev/polygon-problems-generator/pull/6) created, targeting the ING-002 branch.
 - Base main commit at fork discovery: `0725d8874e41b2d39ba9d6d3b82b24c60887109b`.
 
 ## User's goal
@@ -89,6 +89,6 @@ Never assume a previous plan was implemented. New session should confirm branch 
 - Branch `factory/sol-001-reference-check-20261016` on top of PR #5. Added `factory/solution_check.py` (reviewed V1 spec, optional user code, C++17 candidate/oracle agreements, sample and extra cases, verdicts WA/TLE/RE/MLE/OLE/oracle failures, source/input hashes), `factory/docker_runner.py` (Docker-only compilation/execution with read-only/networkless nonroot containers, CPU/memory/pid/time/file caps, symlink/FIFO-resistant guest output), CLI `factory solutions verify`, tests, synthetic fixture, and `.agents/skills/factory-solve/SKILL.md`.
 - Guidance for three modes: statement-only → derive candidate/oracle; statement+idea → challenge untrusted idea; statement+solution → treat user source as candidate and derive oracle separately. **No automatic LLM reasoning runtime has been added**: only agent skill and deterministic tools.
 - Result `PASS_ON_TESTS` means agreement on a limited input corpus, not proof. Runner accepts reviewed `outputPolicy=exact` noninteractive tasks only, and marks `oracleIsProvenCorrect=false`.
-- Mock/offline CI [run 38779624746](https://github.com/ntanthedev/polygon-problems-generator/actions/runs/38779624746) passed 132 tests for Python 3.11/3.12. Later commits added readiness gate and output symlink/FIFO hardening; **confirm latest SHA CI** before merge.
+- Latest mock/offline CI [run 38780833767](https://github.com/ntanthedev/polygon-problems-generator/actions/runs/38780833767) passed **136 tests** on Python 3.11/3.12, including readiness gate and symlink/FIFO/output bounds. Source compileall PASS. This does **not** execute a real Docker image.
 - No real Docker container compilation/execution performed. `SOL-LIVE-001` awaits a disposable local VM + preapproved locally available gcc Docker image; no secrets/Polygon involved. Test fixture and instructions in [SOLUTIONS.md](SOLUTIONS.md).
 - QA-001 next: generate small-domain systematic/random case corpora with explicit oracle resource budgets, seeded reproducibility, counterexample minimizing, saved regressions. Keep checker-specific tasks deferred.
