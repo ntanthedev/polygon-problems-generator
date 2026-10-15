@@ -304,14 +304,17 @@ class CallerContractTests(unittest.TestCase):
 
         err = PolygonAPIError("problem.create", "status", "name already used")
         stderr = io.StringIO()
-        with mock.patch("polyup.__main__.sys.argv", ["polyup", "demo"]):
+        with mock.patch("polyup.__main__.sys.argv", ["polyup", "demo", "--apply"]):
             with mock.patch("polyup.__main__._problem_dir", return_value=Path(".")):
                 with mock.patch("polyup.__main__.collect_access", return_value={}):
-                    with mock.patch("polyup.__main__._api", return_value=object()):
-                        with mock.patch("polyup.__main__.sync_problem", side_effect=err):
-                            with redirect_stderr(stderr):
-                                with self.assertRaises(SystemExit) as caught:
-                                    main()
+                    with mock.patch("polyup.__main__.build_sync_plan", return_value={
+                        "mode": "create", "problemId": None, "remoteRevision": None
+                    }):
+                        with mock.patch("polyup.__main__._api", return_value=object()):
+                            with mock.patch("polyup.__main__.sync_problem", side_effect=err):
+                                with redirect_stdout(io.StringIO()), redirect_stderr(stderr):
+                                    with self.assertRaises(SystemExit) as caught:
+                                        main()
         self.assertEqual(caught.exception.code, 1)
         text = stderr.getvalue()
         self.assertIn("  API error [problem.create]: name already used", text)
@@ -332,15 +335,13 @@ class CallerContractTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, 1)
         self.assertIn("API error [problem.accesses]: ConnectionError: down", stderr.getvalue())
 
-    def test_validator_delete_stops_when_api_returns_none(self):
+    def test_validator_sync_uses_only_documented_save_method(self):
         class FakeAPI:
             def __init__(self):
                 self.calls = []
 
             def call(self, method, fatal=True, **kwargs):
                 self.calls.append((method, fatal, kwargs.get("testIndex")))
-                if method == "problem.deleteValidatorTest":
-                    return None
                 return True
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -352,26 +353,22 @@ class CallerContractTests(unittest.TestCase):
             api = FakeAPI()
             with redirect_stdout(io.StringIO()):
                 _sync_validator_tests(api, {"problemId": "1"}, root)
-        deletes = [c for c in api.calls if c[0] == "problem.deleteValidatorTest"]
-        self.assertEqual(deletes, [("problem.deleteValidatorTest", False, "3")])
+        self.assertEqual([c[0] for c in api.calls],
+                         ["problem.saveValidatorTest", "problem.saveValidatorTest"])
 
     def test_set_access_treats_none_as_failure(self):
+        from polyup.sync_plan import UnsafeSyncError
+
         class FakeAPI:
             def call(self, method, fatal=True, **kwargs):
                 if method == "problem.setAccess":
                     return None
-                if method == "problem.accesses":
-                    return []
                 raise AssertionError(method)
 
-        stdout = io.StringIO()
-        with redirect_stdout(stdout):
-            _sync_access(
-                FakeAPI(),
-                {"problemId": "1"},
-                SyncConfig(access={"alice": "WRITE"}, grant_access=True),
-            )
-        self.assertIn("setAccess failed for alice (WRITE)", stdout.getvalue())
+        with redirect_stdout(io.StringIO()):
+            with self.assertRaises(UnsafeSyncError):
+                _sync_access(FakeAPI(), {"problemId": "1"},
+                             SyncConfig(access={"alice": "WRITE"}, grant_access=True))
 
 
 if __name__ == "__main__":

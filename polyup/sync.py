@@ -6,6 +6,7 @@ from pathlib import Path
 from .api import PolygonAPI
 from .package_monitor import PackageVerificationError, build_and_wait
 from .config import SyncConfig
+from .sync_plan import UnsafeSyncError, assert_remote_unchanged, assert_local_unchanged, build_sync_plan
 from .parsers import (
     detect_problem_name,
     detect_standard_checker,
@@ -20,21 +21,36 @@ def sync_problem(
     api: PolygonAPI,
     config: SyncConfig | None = None,
     dry_run: bool = False,
+    plan: dict | None = None,
+    allow_overwrite: bool = False,
 ):
     config = config or SyncConfig()
+    plan = plan or build_sync_plan(problem_dir, api)
+    if dry_run:
+        print(json.dumps(plan, indent=2, ensure_ascii=False))
+        return plan
+    if plan["mode"] == "update" and not allow_overwrite:
+        raise UnsafeSyncError("Existing problem requires explicit --allow-overwrite")
+    if plan["mode"] == "update" and not plan["remoteInspected"]:
+        raise UnsafeSyncError("Cannot apply an update without read-only remote pre-sync inspection")
+    assert_local_unchanged(problem_dir, plan)
     meta_path = problem_dir / ".polygon.json"
     meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
     problem_id = meta.get("problemId")
     is_interactive = (problem_dir / "interactor.cpp").exists()
+
+    if str(problem_id) != str(plan["problemId"]) or (
+        bool(problem_id) != (plan["mode"] == "update")
+    ):
+        raise UnsafeSyncError("Local problem identity changed since planning")
+    if problem_id:
+        assert_remote_unchanged(api, plan)
 
     folder_name = problem_dir.name.replace("_", "-")
     if problem_id:
         print(f"Using existing problem id={problem_id}")
     else:
         print(f"Creating problem '{folder_name}' on Polygon...")
-        if dry_run:
-            print("  [dry-run] would create problem")
-            return
         result = api.call("problem.create", name=folder_name)
         problem_id = result["id"]
         meta["problemId"] = problem_id
@@ -42,14 +58,6 @@ def sync_problem(
         print(f"  Created problem id={problem_id}")
 
     pid = {"problemId": str(problem_id)}
-
-    if dry_run:
-        print("[dry-run] would sync all components")
-        if config.grant_access and config.access:
-            print("[dry-run] would grant access:")
-            for user, level in config.access.items():
-                print(f"  {user}: {level}")
-        return
 
     _sync_working_copy(api, pid)
     _sync_info(api, pid, config, is_interactive)
@@ -65,13 +73,22 @@ def sync_problem(
     _sync_tests(api, pid, problem_dir)
     _sync_tags(api, pid, problem_dir)
     _sync_note(api, pid, problem_dir)
+    # Catch concurrent committed revision changes before committing ourselves.
+    # This is best-effort, not an atomic lock.
+    assert_remote_unchanged(api, plan)
+    assert_local_unchanged(problem_dir, plan)
     _commit_and_build(api, pid, config)
     if config.grant_access:
         _sync_access(api, pid, config)
     _print_cautions(api, pid)
 
     url = f"https://polygon.codeforces.com/edit-problem?problemId={problem_id}"
-    print(f"\nDone! {url}")
+    if config.build_package and config.verify_package:
+        print(f"\nSync completed; Polygon package verification requested and monitored: {url}")
+    elif config.build_package:
+        print(f"\nSync completed; package READY but invocations NOT verified: {url}")
+    else:
+        print(f"\nSync completed WITHOUT package build/verification: {url}")
 
     print("\n⚠ Enable 'Auto update' manually (no API support):")
     print(f"  {url}/files")
@@ -220,10 +237,8 @@ def _sync_validator_tests(api: PolygonAPI, pid: dict, problem_dir: Path):
             testset="tests", testIndex=str(i),
             testInput=content, testVerdict=verdict,
         )
-    for j in range(new_count + 1, new_count + 20):
-        if api.call("problem.deleteValidatorTest", **pid,
-                     testset="tests", testIndex=str(j), fatal=False) is None:
-            break
+    # No documented problem.deleteValidatorTest method. A remote surplus is
+    # rejected in build_sync_plan instead of silently leaving stale tests.
 
 
 _CHECKER_VERDICTS = {
@@ -284,7 +299,8 @@ def _sync_tests(api: PolygonAPI, pid: dict, problem_dir: Path):
     gen_dir = problem_dir / "generators"
 
     print("Clearing test script...")
-    api.call("problem.clearScript", **pid, testset="tests", fatal=False)
+    # Mandatory destructive write: any refusal must abort before saveTest.
+    api.call("problem.clearScript", **pid, testset="tests")
 
     if samples_dir.exists():
         for i, inp_file in enumerate(sorted(samples_dir.glob("*.in")), 1):
@@ -347,7 +363,7 @@ def _sync_access(api: PolygonAPI, pid: dict, config: SyncConfig):
             login=user, accessType=level, fatal=False,
         )
         if ok is None:
-            print(f"    ⚠ setAccess failed for {user} ({level})")
+            raise UnsafeSyncError(f"Explicit access update for {user} was rejected")
     _print_accesses(api, pid)
 
 
@@ -371,9 +387,9 @@ def list_accesses(api: PolygonAPI, problem_id: str):
 
 
 def _print_cautions(api: PolygonAPI, pid: dict):
-    data = api.call("problem.cautions", **pid, fatal=False)
-    if not data:
-        return
+    data = api.call("problem.cautions", **pid)
+    if not isinstance(data, dict):
+        raise UnsafeSyncError("Unexpected Polygon cautions response")
     hard = []
     for key in ("common", "statement", "structure", "issues"):
         for item in data.get(key) or []:
@@ -381,10 +397,15 @@ def _print_cautions(api: PolygonAPI, pid: dict):
                 hard.append(item.get("message") or item.get("type"))
     ready = data.get("packageReadinessIssues") or []
     warns = data.get("latestPackageWarnings") or []
-    if not hard and not ready and not warns:
+    if hard or ready:
+        detail = "; ".join(str(x) for x in hard[:5]) or "; ".join(
+            str(issue.get("message") or issue.get("type")) for issue in ready[:5]
+        )
+        raise UnsafeSyncError("Polygon reports blocking cautions/readiness issues: " + detail)
+    if not warns:
         print("Cautions: none (HARD)")
         return
-    print("Polygon cautions:")
+    print("Polygon non-blocking warnings:")
     for msg in hard:
         print(f"  HARD  {msg}")
     for issue in ready:

@@ -39,7 +39,7 @@ class PolygonAPIError(Exception):
 
 def _redact(text: str, secrets: tuple[str, ...]) -> str:
     for secret in secrets:
-        if secret and len(secret) >= 4:
+        if secret:
             text = text.replace(secret, "[REDACTED]")
     return text
 

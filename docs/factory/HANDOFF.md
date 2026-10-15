@@ -1,4 +1,4 @@
-# Session handoff — 2026-10-15 (API-002 mock implementation)
+# Session handoff — 2026-10-15 (API-003 safe-sync implementation)
 
 ## Repository / branch
 
@@ -6,6 +6,7 @@
 - Working branch for initial factory work: `factory/phase-0-governance-preflight-20261015`.
 - PR #1 (Draft): [initial Factory M0 + API-001](https://github.com/ntanthedev/polygon-problems-generator/pull/1).
 - API-002 branch: `factory/api-002-package-verification-20261015` based on commit `b30173fee23215ac3e4a4ac42dee93d4f55a639e` from PR #1. Stacked PR: [#2 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/2), targeting the phase-0 branch.
+- API-003 branch: `factory/api-003-safe-sync-20261015` stacked on API-002 branch; Stacked PR: [#3 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/3), targeting API-002 branch.
 - Base main commit at fork discovery: `0725d8874e41b2d39ba9d6d3b82b24c60887109b`.
 
 ## User's goal
@@ -17,7 +18,7 @@ Drop an existing programming problem (PDF/images/text) into a workspace; prefera
 - `.claude/commands/generate-problem.md` requires statement, intended solution, constraints, sample; lacks import-only entry.
 - `verify.sh` compiles, samples, ACC/Java/alt, WA detection, ACC-vs-brute (default 1,000); NOT exhaustive or full FreeMarker execution.
 - `polyup/api.py` now signs requests as before, posts with an explicit `(10s, 60s)` timeout, and turns transport/HTTP/JSON/status failures into `PolygonAPIError`. It does not retry writes.
-- `polyup/sync.py` on API-002 branch now calls `build_and_wait` after commit, captures current revision via `problems.list`, compares pre-build package snapshot, and requires all newly observed packages to reach READY (full build: standard, linux, windows). The `fatal=False` callers still treat `None` as a soft Polygon refusal.
+- `polyup/sync.py` on API-003 branch calls `build_and_wait` after commit; API-003 adds read-only plans, explicit `--apply`/`--allow-overwrite`, preflight, local fingerprint, best-effort remote revision checks, strict clearScript, stale-test blocks and fail-on-hard cautions. API-002 package-monitor CI is still mock-only.
 - `sync-ai-configs.py` regenerates root `AGENTS.md`; prefer `.claude/shared.md` source.
 - Existing `originality.py` blocks similar new inventions in some difficulty bands; imported existing tasks must not use that rule blindly.
 
@@ -26,8 +27,8 @@ Drop an existing programming problem (PDF/images/text) into a workspace; prefera
 - Governance docs, offline preflight CLI, skill and the original 7 unit tests are on PR #1. **PF-001 DONE** based on GitHub Actions [run 38756769808](https://github.com/ntanthedev/polygon-problems-generator/actions/runs/38756769808): `compileall` and tests passed on Python 3.11 and 3.12. That run does not include API-001.
 - **API-001 is on `factory/phase-0-governance-preflight-20261015` (draft PR #1).** Parent commit: `032ff428bbb4915c29fcd5b64a0e62f7b92901da`. No separate branch was opened.
 - Local evidence on Python 3.13.0, from the repo root: `python -m compileall -q polyup tests` exit 0, then `python -m unittest discover -s tests -v` → `Ran 30 tests` `OK` (23 API tests + 7 preflight). Mocks only; no socket to Polygon.
-- **NOT_RUN:** GitHub Actions for this diff, `./verify.sh`, and any live Polygon read or write.
-- Contract that callers rely on: `fatal=False` returns `None` for HTTP, JSON, and non-OK API status. Transport errors raise `PolygonAPIError` for both `fatal` values. `fatal=True` no longer calls `sys.exit` inside `PolygonAPI.call`; the CLI prints `  API error [...]` and exits 1. Secrets shorter than 4 characters are not redacted.
+- **NOT_RUN:** `./verify.sh` and any real Polygon read or write. The API-001 diff has since passed CI as part of PR #1 / subsequent branches.
+- Contract that callers rely on: `fatal=False` returns `None` for HTTP, JSON, and non-OK API status. Transport errors raise `PolygonAPIError` for both `fatal` values. `fatal=True` no longer calls `sys.exit` inside `PolygonAPI.call`; the CLI prints `  API error [...]` and exits 1. API-003 now redacts any nonempty configured secret, including values shorter than four characters.
 - No authorized real Polygon upload has been run; no PDF/vision ingestion implementation yet.
 - `python -m polyup preflight ...` inspects local files only and does not validate algorithm correctness.
 
@@ -40,12 +41,23 @@ Drop an existing programming problem (PDF/images/text) into a workspace; prefera
 - This assumes the documented `Package` fields and full-build types; **live Polygon run is NOT_RUN**, therefore do not claim real API compatibility or production readiness. Explicit approval and private target required before integration test. Wait deadline defaults to 900 seconds (per-request timeout remains 10/60).
 - API-001 followups: short secrets (<4 chars) are not redacted; soft HTTP/status failure of `problem.clearScript` still allows subsequent sync. Track under API-003 before autonomous sync.
 
+
+## API-003 safe sync (2026-10-15)
+
+- Branch `factory/api-003-safe-sync-20261015` stacked on API-002; source files: `polyup/sync_plan.py`, `polyup/__main__.py`, `polyup/sync.py`, `polyup/api.py`, `tests/test_sync_plan.py` plus updated inherited tests.
+- GitHub Actions [run 38769146390](https://github.com/ntanthedev/polygon-problems-generator/actions/runs/38769146390): **60 tests PASS on Python 3.11 + 3.12**, Python compileall succeeded. More code/doc-only commits followed; check latest SHA CI before merge.
+- `python -m polyup <problem>` defaults to a read-only JSON plan. Existing remote problems need Polygon API credentials to READ metadata even for planning. New problem plans require no Polygon credentials. Nothing is written until `--apply`; an existing problem also needs `--allow-overwrite`.
+- `--dry-run --apply` is rejected. `sync_plan.py` rejects structural preflight failures, remote read errors, unexpected response shapes, remote permissions missing, differing working-copy revision, excess validator/checker tests; it reads source/solution/statement/test metadata and labels content comparison **metadata-only**.
+- Rechecks remote committed revision and local SHA-256 manifest/fingerprint before writing and before commit. Not atomic: concurrent remote or local writes between checks can still race. No undo/rollback after a partial remote upload. Always restrict direct edits while syncing.
+- `problem.clearScript` now throws on HTTP/API rejection rather than letting subsequent tests upload, and unsupported `problem.deleteValidatorTest` calls were removed. Explicit access failures and Polygon HARD cautions now fail closed.
+- No real Polygon integration performed. **Do not claim production-ready remote synchronization.** API-INT-001 needs user permission, private target, and reconciliation testing of partial failures.
+
 ## Next session
 
-1. Review PR #1 (base) and stacked PR #2 (API-002), and their CI evidence. Check current branch SHA before editing.
-2. API-002 still needs a separately approved live integration trial on a private Polygon problem; until then mark it BLOCKED for end-to-end confirmation.
-3. Start API-003 in an isolated branch when ready: fail-closed sync, pre-sync diff, secrets/no unconditional retries.
-4. After safe Polygon baseline, proceed ING-001 specification schema. Ingestion/UI remain unimplemented.
+1. Review PR #1 (base) → PR #2 (API-002) → PR #3 (API-003), CI and staged code. Rebase/retarget stacked PRs only after the base merges.
+2. API-INT-001 still requires a separately approved live integration trial on a user-specified private Polygon problem; do not call Polygon yet.
+3. Next coding task: **ING-001**, implement versioned specification schema and deterministic fixture validation. Support optional algorithm/solution without trusting it as proof.
+4. API-003 limitations: metadata-only remote comparisons, best-effort (non-atomic) revision guard and no rollback. These require integration review before unattended writes.
 
 ## Reporting contract
 
