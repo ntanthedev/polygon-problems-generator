@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from .api import PolygonAPI
+from .package_monitor import PackageVerificationError, build_and_wait
 from .config import SyncConfig
 from .parsers import (
     detect_problem_name,
@@ -394,13 +395,20 @@ def _print_cautions(api: PolygonAPI, pid: dict):
 
 def _commit_and_build(api: PolygonAPI, pid: dict, config: SyncConfig):
     print("Committing changes...")
-    api.call(
+    result = api.call(
         "problem.commitChanges", **pid,
         minorChanges="true", message=config.commit_message,
     )
+    if isinstance(result, dict) and result.get("conflictOccurred"):
+        raise PackageVerificationError(
+            "Commit reported a working-copy conflict; no package build started"
+        )
     if config.build_package:
-        print("Building package (this verifies solutions)...")
-        api.call(
-            "problem.buildPackage", **pid,
-            full="true", verify=str(config.verify_package).lower(),
+        print("Building full package and waiting for final Polygon state...")
+        build_and_wait(
+            api, pid,
+            full=True,
+            verify=config.verify_package,
+            timeout_s=config.package_timeout_seconds,
+            poll_interval_s=config.package_poll_seconds,
         )
