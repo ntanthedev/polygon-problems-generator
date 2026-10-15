@@ -19,7 +19,7 @@ States: `TODO`, `IN_PROGRESS`, `BLOCKED`, `DONE`. The board reflects **verified 
 
 ### Immediate next execution task
 
-**API-002 implementation is ready for review** in stacked PR #2 (based on PR #1), but its real Polygon integration trial remains BLOCKED on explicit user permission. Mocks establish the state machine, not the live API contract. Do not enable autonomous upload until a private test problem is named and permission is given. **API-003** is the next independent development task: safe pre-sync plan/diff and fail-closed remote writes; it should start as a separate PR after review. No unconditional retry of mutating methods.
+**API-002 implementation is ready for review** in [stacked PR #2](https://github.com/ntanthedev/polygon-problems-generator/pull/2) (based on PR #1), but its real Polygon integration trial remains BLOCKED on explicit user permission. Mocks establish the state machine, not the live API contract. Do not enable autonomous upload until a private test problem is named and permission is given. **API-003** is the next independent development task: safe pre-sync plan/diff and fail-closed remote writes; it should start as a separate PR after review. No unconditional retry of mutating methods.
 
 API-001 contract (on the phase-0 branch; CI for this commit is NOT_RUN until Actions finishes):
 
