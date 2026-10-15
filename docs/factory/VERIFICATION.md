@@ -31,3 +31,9 @@ python3 -m polyup preflight problems/<name> --json
 ~~~
 
 These checks do not compile solution code. Avoid reporting the problem as correct when only preflight passed.
+
+## API-002 — package lifecycle, mocked (2026-10-15)
+
+The `build_and_wait` integration captures the current revision from `problems.list`, the `problem.packages` snapshot before the build, and only accepts *new* packages matching the revision. The documented states are `PENDING`, `RUNNING`, `READY`, `FAILED`. For a full build, it checks standard/linux/windows. `READY` is only labeled invocation-verified if the upload requested `verify=true`. Tests use a fake API; **real Polygon behavior is NOT_RUN**. CI: [run 38766107192](https://github.com/ntanthedev/polygon-problems-generator/actions/runs/38766107192).
+
+Remaining caution: concurrent builds that become indistinguishable by Polygon package metadata cannot be unambiguously attributed without stronger server correlation. The poller fails closed on duplicate new IDs per type but cannot independently establish authorship of a single new same-revision build. Restrict concurrent operations during an authorized integration test.

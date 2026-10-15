@@ -33,6 +33,8 @@ class SyncConfig:
     api_delay: float = 0.3
     build_package: bool = True
     verify_package: bool = True
+    package_timeout_seconds: float = 900.0
+    package_poll_seconds: float = 5.0
     solution_tags: dict[str, str] = field(default_factory=lambda: dict(SOLUTION_TAGS))
     source_types: dict[str, str] = field(default_factory=lambda: dict(SOURCE_TYPES))
     # login → READ | WRITE | NONE  (applied via problem.setAccess)

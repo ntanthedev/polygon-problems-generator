@@ -1,10 +1,11 @@
-# Session handoff — 2026-10-15 (API-001)
+# Session handoff — 2026-10-15 (API-002 mock implementation)
 
 ## Repository / branch
 
 - Repository: `ntanthedev/polygon-problems-generator` (fork of `7oSkaaa/polygon-problems-generator`).
 - Working branch for initial factory work: `factory/phase-0-governance-preflight-20261015`.
-- PR: [#1 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/1), initial Factory M0.
+- PR #1 (Draft): [initial Factory M0 + API-001](https://github.com/ntanthedev/polygon-problems-generator/pull/1).
+- API-002 branch: `factory/api-002-package-verification-20261015` based on commit `b30173fee23215ac3e4a4ac42dee93d4f55a639e` from PR #1. Stacked PR: [#2 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/2), targeting the phase-0 branch.
 - Base main commit at fork discovery: `0725d8874e41b2d39ba9d6d3b82b24c60887109b`.
 
 ## User's goal
@@ -16,7 +17,7 @@ Drop an existing programming problem (PDF/images/text) into a workspace; prefera
 - `.claude/commands/generate-problem.md` requires statement, intended solution, constraints, sample; lacks import-only entry.
 - `verify.sh` compiles, samples, ACC/Java/alt, WA detection, ACC-vs-brute (default 1,000); NOT exhaustive or full FreeMarker execution.
 - `polyup/api.py` now signs requests as before, posts with an explicit `(10s, 60s)` timeout, and turns transport/HTTP/JSON/status failures into `PolygonAPIError`. It does not retry writes.
-- `polyup/sync.py` creates or updates by `.polygon.json` problemId, commits and requests package build but does not poll final status. Its `fatal=False` callers still treat `None` as a soft Polygon refusal.
+- `polyup/sync.py` on API-002 branch now calls `build_and_wait` after commit, captures current revision via `problems.list`, compares pre-build package snapshot, and requires all newly observed packages to reach READY (full build: standard, linux, windows). The `fatal=False` callers still treat `None` as a soft Polygon refusal.
 - `sync-ai-configs.py` regenerates root `AGENTS.md`; prefer `.claude/shared.md` source.
 - Existing `originality.py` blocks similar new inventions in some difficulty bands; imported existing tasks must not use that rule blindly.
 
@@ -30,12 +31,21 @@ Drop an existing programming problem (PDF/images/text) into a workspace; prefera
 - No authorized real Polygon upload has been run; no PDF/vision ingestion implementation yet.
 - `python -m polyup preflight ...` inspects local files only and does not validate algorithm correctness.
 
+
+## API-002 mock verification (2026-10-15)
+
+- Code: `polyup/package_monitor.py`, `polyup/config.py`, `polyup/sync.py`, `tests/test_package_monitor.py`.
+- GitHub Actions [run 38766107192](https://github.com/ntanthedev/polygon-problems-generator/actions/runs/38766107192) confirmed `compileall` and **44 unit tests PASS** (30 inherited + 14 new) on Python 3.11 and 3.12. An initial fixture error on a prior run was corrected before this green run.
+- A package whose (id, type) was present before build is never accepted as a new READY package. `problem.buildPackage` is called once; lost-response writes are not retried. Unknown/malformed packages, FAILED, ambiguous concurrent builds, old revision and timeout fail closed. `verify=false` never sets `verified_invocations=true`.
+- This assumes the documented `Package` fields and full-build types; **live Polygon run is NOT_RUN**, therefore do not claim real API compatibility or production readiness. Explicit approval and private target required before integration test. Wait deadline defaults to 900 seconds (per-request timeout remains 10/60).
+- API-001 followups: short secrets (<4 chars) are not redacted; soft HTTP/status failure of `problem.clearScript` still allows subsequent sync. Track under API-003 before autonomous sync.
+
 ## Next session
 
-1. Read the GitHub Actions run for the API-001 commit on PR #1. Do not mark CI as passed until that run is green.
-2. Optional: `python -m polyup preflight problems/<name> --json` on a real complete problem folder; it only checks structure.
-3. Start API-002: poll package state after build, with mocks. Do not call Polygon until the user names the target problem and approves the remote read/write.
-4. Ingestion and UI stay later. Do not retry `problem.create`, `saveFile`, `commitChanges`, or `buildPackage` automatically.
+1. Review PR #1 (base) and stacked PR #2 (API-002), and their CI evidence. Check current branch SHA before editing.
+2. API-002 still needs a separately approved live integration trial on a private Polygon problem; until then mark it BLOCKED for end-to-end confirmation.
+3. Start API-003 in an isolated branch when ready: fail-closed sync, pre-sync diff, secrets/no unconditional retries.
+4. After safe Polygon baseline, proceed ING-001 specification schema. Ingestion/UI remain unimplemented.
 
 ## Reporting contract
 
