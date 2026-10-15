@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import re
+import stat
 import shutil
 import subprocess
 import tempfile
@@ -22,6 +23,24 @@ OUTPUT_LIMIT_BYTES = 2 * 1024 * 1024
 BUILD_LOG_LIMIT_BYTES = 12 * 1024
 COMPILE_WALL_SECONDS = 45
 RUN_WALL_SLACK_SECONDS = 3
+
+def _read_guest_file(path: Path, limit: int) -> tuple[bytes | None, int]:
+    """Read a regular guest-created file, never following a malicious symlink."""
+    try:
+        fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    except FileNotFoundError:
+        return None, 0
+    except OSError:
+        raise ProblemSpecError("Unsafe or unreadable guest output file") from None
+    try:
+        metadata = os.fstat(fd)
+        if not stat.S_ISREG(metadata.st_mode):
+            raise ProblemSpecError("Guest output is not a regular file")
+        data = os.read(fd, min(limit, metadata.st_size))
+        return data, metadata.st_size
+    finally:
+        os.close(fd)
+
 
 class DockerRunner:
     """Use as a context manager; only scoped temp bind mounts are writable."""
@@ -136,11 +155,14 @@ class DockerRunner:
             [(src, "/src", True), (output, "/out", False)],
             script, COMPILE_WALL_SECONDS, memory="1g"
         )
-        log = output / "build.log"
-        detail = log.read_bytes()[:BUILD_LOG_LIMIT_BYTES].decode("utf-8", "replace") if log.is_file() else ""
+        log, _ = _read_guest_file(output / "build.log", BUILD_LOG_LIMIT_BYTES)
+        detail = (log or b"").decode("utf-8", "replace")
         if status == -1:
             return Execution("COMPILE_TIMEOUT", detail="Compiler exceeded wall-time budget")
-        if status != 0 or not (output / "program").is_file():
+        program = output / "program"
+        if program.is_symlink():
+            raise ProblemSpecError("Compiler produced a symlink instead of an executable")
+        if status != 0 or not program.is_file():
             return Execution("COMPILE_ERROR", detail=detail or "Compiler failed; inspect Docker environment")
         return Execution("OK")
 
@@ -159,8 +181,9 @@ class DockerRunner:
         (input_dir / "case.in").write_bytes(data)
         (input_dir / "case.in").chmod(0o644)
         build_dir = root / role / "build"
-        if not (build_dir / "program").is_file():
-            raise ProblemSpecError("No compiled executable for " + role)
+        binary = build_dir / "program"
+        if binary.is_symlink() or not binary.is_file():
+            raise ProblemSpecError("No regular compiled executable for " + role)
         for name in ("stdout", "stderr"):
             p = output_dir / name
             if p.exists():
@@ -176,16 +199,15 @@ class DockerRunner:
         )
         if status == -1:
             return Execution("TLE", detail="Execution exceeded wall-time budget")
-        stdout = output_dir / "stdout"
-        stderr = output_dir / "stderr"
-        size = stdout.stat().st_size if stdout.is_file() else 0
+        stdout, size = _read_guest_file(output_dir / "stdout", OUTPUT_LIMIT_BYTES)
+        stderr, _ = _read_guest_file(output_dir / "stderr", 512)
         if size >= OUTPUT_LIMIT_BYTES or status in {153, 128 + 25}:
             return Execution("OLE", detail="Execution exceeded output file limit")
         if status == 137:
             return Execution("MLE", detail="Container killed (possible memory limit)")
         if status != 0:
-            err = stderr.read_bytes()[:512].decode("utf-8", "replace") if stderr.is_file() else ""
+            err = (stderr or b"").decode("utf-8", "replace")
             return Execution("RE", detail=f"Process exit={status}. {err}")
-        if not stdout.is_file():
+        if stdout is None:
             return Execution("RE", detail="Execution produced no stdout file")
-        return Execution("OK", output=stdout.read_bytes())
+        return Execution("OK", output=stdout)
