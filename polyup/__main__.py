@@ -131,6 +131,8 @@ def main():
     )
     parser.add_argument("--no-access", action="store_true", help="Skip granting access")
     args = parser.parse_args()
+    if args.apply and args.dry_run:
+        parser.error("--apply and --dry-run are mutually exclusive")
 
     repo_root = Path(__file__).resolve().parent.parent
     _load_env(repo_root / ".env")
