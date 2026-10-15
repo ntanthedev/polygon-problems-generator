@@ -55,6 +55,33 @@ class SchemaFixturesTests(unittest.TestCase):
                 self.assertEqual(report["status"], "FAIL")
                 self.assertIn("SOURCE_UNREVIEWED", [e["code"] for e in report["errors"]])
 
+    def test_ready_rejects_unresolved_io_semantics(self):
+        spec = parse_json((FIXTURES / "valid" / "ready-statement-only.json").read_text())
+        spec["statement"]["testCaseMode"] = "unknown"
+        spec["statement"]["outputPolicy"] = "unknown"
+        report = inspect_spec(spec, ready=True)
+        self.assertEqual(report["status"], "FAIL")
+        self.assertEqual(
+            [x["code"] for x in report["errors"]].count("UNRESOLVED_SEMANTICS"), 2
+        )
+
+    def test_sum_over_cases_constraint_is_explicit_not_inferred(self):
+        spec = parse_json((FIXTURES / "valid" / "ready-statement-only.json").read_text())
+        spec["statement"]["testCaseMode"] = "multiple"
+        spec["statement"]["constraints"].append({
+            "expression": "sum(n) <= 200000",
+            "scope": "sum-over-cases",
+            "sourceExcerpt": "sum of n over all test cases <= 2*10^5",
+        })
+        report = inspect_spec(spec, ready=True)
+        self.assertEqual(report["status"], "PASS", report["errors"])
+
+    def test_inline_user_solution_allowed_but_not_assumed_correct(self):
+        spec = parse_json((FIXTURES / "valid" / "ready-with-solution.json").read_text())
+        spec["guidance"]["solution"].pop("file")
+        spec["guidance"]["solution"]["code"] = "int main(){return 0;}"
+        self.assertEqual(inspect_spec(spec, ready=True)["status"], "PASS")
+
     def test_duplicate_json_properties_rejected(self):
         with self.assertRaisesRegex(ProblemSpecError, "Duplicate"):
             parse_json('{"schemaVersion": 1, "schemaVersion": 2}')
