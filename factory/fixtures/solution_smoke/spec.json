@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "slug": "addition_smoke",
+  "mode": "statement+solution",
+  "source": {
+    "kind": "plain-text",
+    "path": "source/problem.txt",
+    "sha256": null,
+    "rawText": "Input: two signed integers a, b.\nOutput: a+b.\n",
+    "extraction": "manual",
+    "reviewStatus": "verified",
+    "attribution": null
+  },
+  "statement": {
+    "title": "Two Sum",
+    "language": "en",
+    "legend": "Find the sum of a and b.",
+    "input": "The input contains two integers a and b.",
+    "output": "Output their sum.",
+    "notes": null,
+    "interactive": false,
+    "constraints": [
+      {
+        "expression": "-1000000000 <= a,b <= 1000000000",
+        "scope": "per-file",
+        "sourceExcerpt": "-1000000000 <= a,b <= 1000000000"
+      }
+    ],
+    "samples": [
+      {
+        "input": "2 3\n",
+        "output": "5\n",
+        "explanation": null
+      }
+    ],
+    "testCaseMode": "single",
+    "outputPolicy": "exact",
+    "timeLimitMs": 1000,
+    "memoryLimitMb": 256
+  },
+  "guidance": {
+    "solution": {
+      "language": "cpp17",
+      "providedBy": "user",
+      "file": "candidate.cpp"
+    }
+  },
+  "ambiguities": []
+}
