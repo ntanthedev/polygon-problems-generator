@@ -70,6 +70,22 @@ class ImportTextTests(unittest.TestCase):
         self.assertFalse(spec["statement"]["samples"])
         self.assertTrue(any("missing output" in a["issue"] for a in spec["ambiguities"]))
 
+    def test_explicit_title_heading(self):
+        self.source.write_text("# Title\nActual Problem\n## Input\na\n## Output\nb\n")
+        self.run_import()
+        self.assertEqual(self.spec()["statement"]["title"], "Actual Problem")
+
+    def test_duplicate_unnumbered_samples_are_not_silently_joined(self):
+        self.source.write_text(
+            "# Example\n## Sample Input\n1\n## Sample Output\n1\n"
+            "## Sample Input\n2\n## Sample Output\n2\n"
+        )
+        self.run_import()
+        data = self.spec()
+        self.assertEqual(data["statement"]["samples"], [])
+        self.assertTrue(any("Repeated sample headings" in issue["issue"]
+                            for issue in data["ambiguities"]))
+
     def test_no_hallucinated_sections(self):
         self.source.write_text("A short unstructured paragraph.")
         self.run_import()
