@@ -91,7 +91,7 @@ class PackageMonitorTests(unittest.TestCase):
 
     def test_old_ready_package_does_not_false_pass(self):
         old = [pkg("standard", "READY", ident=100)]
-        api = FakeAPI([old, old, old])
+        api = FakeAPI([old, old, old, old])
         with self.assertRaisesRegex(PackageVerificationError, "Timed out"):
             _run(api, full=False, timeout_s=2, poll_interval_s=1)
 
