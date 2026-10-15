@@ -184,6 +184,27 @@ class SyncPlanTests(unittest.TestCase):
         self.assertNotIn(" bc", str(err.exception))
         self.assertIn("[REDACTED]", str(err.exception))
 
+    def test_local_change_after_plan_blocks_before_write(self):
+        self.make_existing()
+        api = FakeReadAPI()
+        plan = build_sync_plan(self.root, api)
+        original = len(api.calls)
+        (self.root / "solutions" / "acc.cpp").write_text("int main(){return 2;}")
+        with self.assertRaisesRegex(UnsafeSyncError, "Local source files changed"):
+            sync_problem(self.root, api, plan=plan, allow_overwrite=True)
+        self.assertEqual(len(api.calls), original)
+
+    def test_dry_run_and_apply_cannot_be_combined(self):
+        from polyup.__main__ import main
+        with mock.patch("polyup.__main__.sys.argv", [
+            "polyup", "sample", "--dry-run", "--apply"
+        ]), mock.patch("polyup.__main__._api") as api_factory, \
+             redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit) as exited:
+                main()
+        self.assertEqual(exited.exception.code, 2)
+        api_factory.assert_not_called()
+
     def test_cli_default_is_plan_only_and_no_credential_for_new(self):
         from polyup.__main__ import main
         with mock.patch("polyup.__main__.sys.argv", ["polyup", "sample"]), \
