@@ -218,6 +218,8 @@ def normalize_draft(text: str, *, slug: str, kind: str, digest: str,
     title = None
     sections: dict[str, list[str]] = {}
     samples: dict[str, dict[str, str]] = {}
+    sample_seen: set[tuple[str, str]] = set()
+    sample_duplicates: set[str] = set()
     current = "legend"
     seen_sections = set()
     for line in text.splitlines(keepends=True):
@@ -225,8 +227,9 @@ def normalize_draft(text: str, *, slug: str, kind: str, digest: str,
         if _PAGE_HEADER.match(content.strip()):
             continue
         if title is None and (m := _TITLE.match(content)):
-            title = m.group(1).strip()
-            continue
+            if m.group(1).strip().lower() != "title":
+                title = m.group(1).strip()
+                continue
         if title is None and (m := _INLINE_TITLE.match(content)):
             title = m.group(1).strip()
             continue
@@ -235,7 +238,11 @@ def normalize_draft(text: str, *, slug: str, kind: str, digest: str,
             sm = _SAMPLE_NAME.match(section)
             if sm:
                 index = sm.group(3) or "1"
-                current = f"sample:{index}:{sm.group(2).lower()}"
+                direction = sm.group(2).lower()
+                if (index, direction) in sample_seen:
+                    sample_duplicates.add(index)
+                sample_seen.add((index, direction))
+                current = f"sample:{index}:{direction}"
             else:
                 current = _section_key(section)
                 seen_sections.add(current)
@@ -255,6 +262,12 @@ def normalize_draft(text: str, *, slug: str, kind: str, digest: str,
     pairs = []
     for idx in sorted(samples, key=lambda s: int(s)):
         candidate = samples[idx]
+        if idx in sample_duplicates:
+            ambiguities.append(_field_ambiguity(
+                f"statement.samples[{idx}]",
+                "Repeated sample headings share an index; manual pairing required"
+            ))
+            continue
         if "input" in candidate and "output" in candidate:
             pairs.append({
                 "input": _strip_sample(candidate["input"]),
