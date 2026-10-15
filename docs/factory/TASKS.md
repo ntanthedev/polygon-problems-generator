@@ -11,7 +11,7 @@ States: `TODO`, `IN_PROGRESS`, `BLOCKED`, `DONE`. The board reflects **verified 
 | API-003 | DONE | Read-only pre-sync plan, explicit apply/overwrite, revision + local drift guards, strict clearScript | Mocked CI 60 tests PASS (3.11/3.12); real Polygon NOT_RUN |
 | API-INT-001 | BLOCKED | Authorized real Polygon integration smoke test for API-001/002/003 | User-specified private problem + explicit approval required |
 | ING-001 | DONE | Strict versioned spec, 4 input modes, offline CLI and local Polygon adapter | 5 valid/8 invalid JSON fixtures + Python tests; 83 tests PASS (3.11/3.12), CI run 38772106942 |
-| ING-002 | DONE | Offline-first TXT/Markdown/PDF/image drafts, page/bbox evidence, optional Gemini vision adapter | 105 mock/offline tests PASS (3.11/3.12) CI run 38777154334; Gemini live NOT_RUN |
+| ING-002 | DONE | Offline-first TXT/Markdown/PDF/image drafts, page/bbox evidence, optional Gemini vision adapter | 106 mock/offline tests PASS (3.11/3.12) CI run 38777661492; Gemini live NOT_RUN |
 | ING-LIVE-001 | BLOCKED | Live Gemini vision smoke test on a non-sensitive disposable source | User opt-in, available API model and local key required; no external calls made |
 | SOL-001 | TODO | Three input modes (no hint / idea / user solution) | Independent oracle tests |
 | QA-001 | TODO | Differential+exhaustive runner | Seeded counterexample + resource limits |
@@ -44,4 +44,4 @@ Each change: task ID → files changed → tests run + results → risks → PR/
 
 ING-001 evidence: [GitHub Actions run 38772106942](https://github.com/ntanthedev/polygon-problems-generator/actions/runs/38772106942) — 83 tests PASS on Python 3.11 + 3.12, compileall PASS. Tests live in `tests/test_problem_spec.py`; [V1 contract](PROBLEM_SPEC_V1.md). Importing with `factory spec from-local` outputs draft only. No real Polygon calls or uploads were made.
 
-ING-002 CI: [run 38777154334](https://github.com/ntanthedev/polygon-problems-generator/actions/runs/38777154334) — 105 tests PASS on Python 3.11 and 3.12; later `GeminiVision` exception sanitization and documentation updates require latest-head CI confirmation. No live Gemini or Polygon requests. The model-neutral vision protocol allows alternative providers, but only Gemini Interactions has a concrete adapter in this branch. See [INGESTION.md](INGESTION.md).
+ING-002 CI: [run 38777661492](https://github.com/ntanthedev/polygon-problems-generator/actions/runs/38777661492) — 106 tests PASS on Python 3.11 and 3.12; later `GeminiVision` exception sanitization and documentation updates require latest-head CI confirmation. No live Gemini or Polygon requests. The model-neutral vision protocol allows alternative providers, but only Gemini Interactions has a concrete adapter in this branch. See [INGESTION.md](INGESTION.md).
