@@ -12,7 +12,7 @@
 ~~~text
 problems/<slug>/
   source/                 # immutable origin files and attribution
-  spec.json               # normalized constraints and input/output contract
+  spec.json               # version 1 normalization, source evidence, unknowns and hints
   statement/statement.tex # existing Polygon parser contract
   statement/tutorial.tex
   solutions/{acc,acc_alt,brute,wa}.cpp
@@ -51,3 +51,7 @@ Polygon credentials stay in a local environment/.env, never in prompts, commits,
 - Only editorial spelling → render/review statement; no need to rewrite algorithms.
 
 Model output is **proposed code or claims**; local and Polygon verification provide independent evidence.
+
+## ING-001: versioned interchange contract
+
+`factory/schemas/problem-spec.v1.schema.json` defines the stable boundary between multimodal ingestion, reasoning agents, test engineering and Polygon serialization. Existing `polyup` does not yet read `spec.json` (backward compatibility). Provenance, literal constraints with scopes, samples, testcase semantics, output/checker policy and optional ideas/solutions are explicit; see [V1 contract](PROBLEM_SPEC_V1.md).

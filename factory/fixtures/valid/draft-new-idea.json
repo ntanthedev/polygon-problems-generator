@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "slug": "new_task",
+  "mode": "new-idea",
+  "source": {
+    "kind": "idea",
+    "path": null,
+    "sha256": null,
+    "rawText": "Design a task about ranges.",
+    "extraction": "manual",
+    "reviewStatus": "pending",
+    "attribution": null
+  },
+  "statement": {
+    "title": null,
+    "language": "en",
+    "legend": null,
+    "input": null,
+    "output": null,
+    "notes": null,
+    "interactive": false,
+    "constraints": [],
+    "samples": [],
+    "testCaseMode": "unknown",
+    "outputPolicy": "unknown",
+    "timeLimitMs": null,
+    "memoryLimitMb": null
+  },
+  "guidance": {
+    "idea": {
+      "text": "Use prefix sums for range queries.",
+      "providedBy": "user"
+    }
+  },
+  "ambiguities": []
+}

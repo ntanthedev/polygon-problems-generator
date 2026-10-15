@@ -1,4 +1,4 @@
-# Session handoff — 2026-10-15 (API-003 safe-sync implementation)
+# Session handoff — 2026-10-15 (ING-001 normalized spec implementation)
 
 ## Repository / branch
 
@@ -7,6 +7,7 @@
 - PR #1 (Draft): [initial Factory M0 + API-001](https://github.com/ntanthedev/polygon-problems-generator/pull/1).
 - API-002 branch: `factory/api-002-package-verification-20261015` based on commit `b30173fee23215ac3e4a4ac42dee93d4f55a639e` from PR #1. Stacked PR: [#2 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/2), targeting the phase-0 branch.
 - API-003 branch: `factory/api-003-safe-sync-20261015` stacked on API-002 branch; Stacked PR: [#3 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/3), targeting API-002 branch.
+- ING-001 branch: `factory/ing-001-problem-spec-v1-20261015`, stacked on API-003. [stacked PR #4 (Draft)](https://github.com/ntanthedev/polygon-problems-generator/pull/4), targeting the API-003 branch.
 - Base main commit at fork discovery: `0725d8874e41b2d39ba9d6d3b82b24c60887109b`.
 
 ## User's goal
@@ -56,9 +57,17 @@ Drop an existing programming problem (PDF/images/text) into a workspace; prefera
 
 1. Review PR #1 (base) → PR #2 (API-002) → PR #3 (API-003), CI and staged code. Rebase/retarget stacked PRs only after the base merges.
 2. API-INT-001 still requires a separately approved live integration trial on a user-specified private Polygon problem; do not call Polygon yet.
-3. Next coding task: **ING-001**, implement versioned specification schema and deterministic fixture validation. Support optional algorithm/solution without trusting it as proof.
+3. Next coding task: **ING-002**. Start with plain-text/Markdown and deterministic fixtures before PDF/image OCR. Preserve sources and unknown semantics.
 4. API-003 limitations: metadata-only remote comparisons, best-effort (non-atomic) revision guard and no rollback. These require integration review before unattended writes.
 
 ## Reporting contract
 
 Never assume a previous plan was implemented. New session should confirm branch SHA, current file content and actual test outcomes. User may be using a separate coding agent for other projects; avoid unnecessary local coding-model consumption.
+
+## ING-001 delivery (2026-10-15)
+
+- `factory/schemas/problem-spec.v1.schema.json`: strict JSON Schema Draft 2020-12 (`schemaVersion=1`), fields for provenance, exact text, optional user-provided idea or solution, scoped constraints including sums, samples, test-case mode, output policy, ambiguous values, time/memory limits.
+- `factory/spec.py` + CLI `python -m factory spec`: structure validation, `--ready` review gate, `from-local` adapter reading existing Polygon statement.tex + samples while preserving original UTF-8 bytes/CRLF and SHA-256. It **does not guess** constraints, algorithms, testcase mode or checker equivalence.
+- 5 valid + 8 invalid fixtures, unit tests, `requirements-factory.txt`, CI extension for Python 3.11/3.12 and a model-neutral `.agents/skills/factory-problem-spec/SKILL.md`.
+- Read [PROBLEM_SPEC_V1.md](PROBLEM_SPEC_V1.md). No calls to Polygon; no PDF/image ingestion yet. Do not confuse `--ready` with proof of correctness or Polygon publication readiness.
+- Upcoming ING-002 must preserve the same schema and capture text/region provenance; it is NOT implemented here.
