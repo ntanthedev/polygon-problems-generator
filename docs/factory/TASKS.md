@@ -1,4 +1,4 @@
-# Execution board — updated 2026-10-15 (API-003)
+# Execution board — updated 2026-10-15 (ING-001)
 
 States: `TODO`, `IN_PROGRESS`, `BLOCKED`, `DONE`. The board reflects **verified work**, not agent intentions. Do one narrow task/PR at a time.
 
@@ -10,7 +10,7 @@ States: `TODO`, `IN_PROGRESS`, `BLOCKED`, `DONE`. The board reflects **verified 
 | API-002 | BLOCKED | Poll and verify remote package state after build | Code + 14 mocked tests PASS (Python 3.11/3.12, CI run 38766107192); live Polygon verification requires explicit permission |
 | API-003 | DONE | Read-only pre-sync plan, explicit apply/overwrite, revision + local drift guards, strict clearScript | Mocked CI 60 tests PASS (3.11/3.12); real Polygon NOT_RUN |
 | API-INT-001 | BLOCKED | Authorized real Polygon integration smoke test for API-001/002/003 | User-specified private problem + explicit approval required |
-| ING-001 | TODO | Define versioned normalized problem specification | JSON schema + valid/invalid fixtures |
+| ING-001 | DONE | Strict versioned spec, 4 input modes, offline CLI and local Polygon adapter | 5 valid/8 invalid JSON fixtures + Python tests; GitHub Actions PASS (3.11/3.12) |
 | ING-002 | TODO | Text/Markdown/PDF/image ingestion | Golden fixture + ambiguity report |
 | SOL-001 | TODO | Three input modes (no hint / idea / user solution) | Independent oracle tests |
 | QA-001 | TODO | Differential+exhaustive runner | Seeded counterexample + resource limits |
@@ -20,7 +20,7 @@ States: `TODO`, `IN_PROGRESS`, `BLOCKED`, `DONE`. The board reflects **verified 
 
 ### Immediate next execution task
 
-**API-003 implementation is in [stacked PR #3](https://github.com/ntanthedev/polygon-problems-generator/pull/3)** (on PR #2). Next independent development task: **ING-001 — versioned normalized problem specification**, supporting statement-only / statement+idea / statement+solution. The real Polygon smoke test API-INT-001 remains BLOCKED without an authorized private problem. Existing API implementation has mock CI only, not verified against live Polygon. Do not enable unattended publishing yet. No unconditional retry of mutating API calls.
+**API-003 implementation is in [stacked PR #3](https://github.com/ntanthedev/polygon-problems-generator/pull/3)** (on PR #2). ING-001 implemented on stacked PR #4: V1 JSON Schema, 5 valid/8 invalid fixtures, offline adapter, CLI, and validation tests. Next task: **ING-002** — text/Markdown/PDF/image ingestion, preserving original source and evidence. The real Polygon smoke test API-INT-001 remains BLOCKED without an authorized private problem. Existing API implementation has mock CI only, not verified against live Polygon. Do not enable unattended publishing yet. No unconditional retry of mutating API calls.
 
 API-001 contract (CI validated on [PR #1](https://github.com/ntanthedev/polygon-problems-generator/pull/1)):
 
@@ -40,3 +40,5 @@ PF-001: GitHub Actions [run 38756769808](https://github.com/ntanthedev/polygon-p
 ### Task protocol
 
 Each change: task ID → files changed → tests run + results → risks → PR/commit → HANDOFF updated. Do not mark DONE merely because an agent wrote code.
+
+ING-001 evidence: tests live in `tests/test_problem_spec.py`; [V1 contract](PROBLEM_SPEC_V1.md). Importing with `factory spec from-local` outputs draft only. No real Polygon calls or uploads were made.

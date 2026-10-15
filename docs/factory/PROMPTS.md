@@ -16,3 +16,7 @@ The agent must always inspect current files and not assume these docs represent 
 
 ## E. Restart with ChatGPT in another conversation
 > Continue my AI Polygon Problem Factory fork at `ntanthedev/polygon-problems-generator`. Use the GitHub connector to read `FACTORY_START_HERE.md`, `docs/factory/HANDOFF.md`, `docs/factory/TASKS.md`, `docs/factory/DECISIONS.md`, and relevant source from the **current working branch/PR**, not outdated memory. You are the technical project coordinator; prefer opening small reviewable PRs directly on GitHub. Verify current status, identify the next task, implement/test what is feasible, and give only essential local commands for any remaining real-world verification. Do not ask me to re-explain earlier decisions.
+
+## F. ING-002, any coding model (only after ING-001 review)
+
+> Task ING-002 only. Inspect `factory/spec.py`, `factory/schemas/problem-spec.v1.schema.json`, `docs/factory/PROBLEM_SPEC_V1.md`, `TASKS.md` and `HANDOFF.md`. First implement deterministic UTF-8 text/Markdown → V1 draft with golden fixtures, exact source preservation and explicit ambiguous constraints, then separately add PDF text-layer/page extraction and image/scan input using a configurable multimodal adapter. Never fabricate samples, case count or constraints. Do not execute untrusted solutions or call Polygon. Run complete CI and update handoff with exact outcomes. Build each medium as a distinct task/PR if necessary.
