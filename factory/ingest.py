@@ -227,7 +227,7 @@ def normalize_draft(text: str, *, slug: str, kind: str, digest: str,
         if _PAGE_HEADER.match(content.strip()):
             continue
         if title is None and (m := _TITLE.match(content)):
-            if m.group(1).strip().lower() != "title":
+            if not _HEADING.match(content):
                 title = m.group(1).strip()
                 continue
         if title is None and (m := _INLINE_TITLE.match(content)):

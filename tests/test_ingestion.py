@@ -86,6 +86,14 @@ class ImportTextTests(unittest.TestCase):
         self.assertTrue(any("Repeated sample headings" in issue["issue"]
                             for issue in data["ambiguities"]))
 
+    def test_top_level_section_heading_is_not_assumed_to_be_title(self):
+        self.source.write_text("# Problem Statement\nCount items.\n# Input\nn.\n# Output\nn.\n")
+        self.run_import()
+        spec = self.spec()
+        self.assertIsNone(spec["statement"]["title"])
+        self.assertEqual(spec["statement"]["legend"], "Count items.")
+        self.assertEqual(spec["statement"]["input"], "n.")
+
     def test_no_hallucinated_sections(self):
         self.source.write_text("A short unstructured paragraph.")
         self.run_import()
