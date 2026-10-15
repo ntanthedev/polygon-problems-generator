@@ -12,7 +12,7 @@ from factory.__main__ import main
 from factory.solution_check import (
     Case, Execution, get_cases, resolve_candidate, verify_candidate,
 )
-from factory.docker_runner import DockerRunner
+from factory.docker_runner import DockerRunner, _read_guest_file
 from factory.spec import ProblemSpecError, parse_json
 
 FIXTURE = Path(__file__).resolve().parent.parent / "factory/fixtures/valid/ready-statement-only.json"
@@ -255,6 +255,25 @@ class DockerPolicyTests(unittest.TestCase):
                 with DockerRunner():
                     pass
         self.assertEqual(run.call_args.args[0][:3], ["docker", "image", "inspect"])
+
+    def test_guest_output_symlink_cannot_read_host_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            secret = base / "secret"
+            secret.write_text("HOST_PRIVATE_SECRET")
+            link = base / "guest_stdout"
+            link.symlink_to(secret)
+            with self.assertRaisesRegex(ProblemSpecError, "Unsafe"):
+                _read_guest_file(link, 128)
+            self.assertEqual(secret.read_text(), "HOST_PRIVATE_SECRET")
+
+    def test_guest_regular_file_read_is_bounded(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "guest_stdout"
+            path.write_bytes(b"abcdef")
+            content, size = _read_guest_file(path, 3)
+            self.assertEqual(content, b"abc")
+            self.assertEqual(size, 6)
 
     def test_invalid_image_name_refused(self):
         with self.assertRaises(ProblemSpecError):

@@ -186,7 +186,7 @@ class DockerRunner:
             raise ProblemSpecError("No regular compiled executable for " + role)
         for name in ("stdout", "stderr"):
             p = output_dir / name
-            if p.exists():
+            if p.exists() or p.is_symlink():
                 p.unlink()
         script = ("ulimit -f 4096; "
                   "exec /work/program < /input/case.in "
