@@ -258,6 +258,9 @@ def normalize_draft(text: str, *, slug: str, kind: str, digest: str,
         contents = "".join(sections.get(key, [])).strip()
         return contents or None
 
+    if title is None:
+        title = "".join(sections.get("title", [])).strip() or None
+
     ambiguities = []
     pairs = []
     for idx in sorted(samples, key=lambda s: int(s)):
